@@ -1,7 +1,6 @@
 # 顔マッチングサービス — 仕様書
 ## 概要
 このサービスは、オーストラリアの「ペットと里親の顔マッチング」アプリの着想を得て、人間版として実装するものです。人はこの世にドッペルゲンガーがいると言われます。ユーザーがアップロードした顔画像をもとに、「似ている他のユーザー」を検出・提示し、簡易チャットでつながれる Web アプリケーションです。
-顔特徴量の抽出には Python の ML ライブラリ（例: insightface / facenet-pytorch）を使用する。最初はローカル CPU、必要に応じて GPU に移行。
 顔特徴の抽出サービス（Python）とアプリケーションロジック（Go）は gRPC で接続する。
 フロントエンドは Next.js + TypeScript を想定（Web メイン）。将来 Flutter / Swift に移植する予定。
 
@@ -43,7 +42,7 @@ end
 
 %% External
 subgraph EXT["External Services"]
-    GCP["Google Cloud Vision API (検討中)"]
+    GCP["Google Cloud Vision API"]
 end
 
 %% 認証フロー
@@ -52,8 +51,8 @@ AUTH -->|JWT発行| LOGIN
 
 %% 画像アップロードフロー
 UI -->|画像アップロード + JWT| UPLOAD
-UPLOAD -->|gRPC で画像パス送信| PY
-PY -->|Embedding生成| UPLOAD
+UPLOAD -->|gRPCで画像パス送信| PY
+PY -->|gRPCでEmbedding生成| UPLOAD
 
 UPLOAD -->|Embeddingを渡す| MATCH
 MATCH -->|pgvector検索| DB
@@ -64,31 +63,33 @@ UPLOAD -->|レスポンス返却| UI
 PY -->|顔検出 API 呼び出し| GCP
 ```
 
-# 2-add. アーキテクチャ詳細 (クリーンアーキテクチャ & DDD の採用)
+<!-- websocketによるチャット機能をfrontendのflowchart LR追加する -->
 
-# 3. 処理の流れ
+# 2-add①. 処理の流れ
 
-## ① Frontend → Go API
+### ① Frontend → Go API
 Next.jsから画像をアップロードする
 
-## ② Go → Python (gRPC)
+### ② Go → Python (gRPC)
 画像をGo APIからPythonサーバへ送る。
 Pythonは以下のものを担当する。
 - 顔検出（Vision API）
 - 顔前処理 (アライメント)
 - 512次元 embedding 抽出
 
-## ③ Python → Go (gRPC)
+### ③ Python → Go (gRPC)
 PythonからembeddingをGoに返す。
 
-## ④ 類似度検索をGoが行う。
+### ④ 類似度検索をGoが行う
 - embedding を受け取り
 - pgvector で類似検索
 - コサイン類似度でスコア算出する
 - 類似ユーザー一覧を返却する
 
-## ⑤ Go → Frontend
+### ⑤ Go → Frontend
 結果 (似ているユーザー)を返す。
+
+# 2-add②. アーキテクチャ詳細 (クリーンアーキテクチャ & DDD の採用)
 
 # 4. フロントエンド仕様 (Next.js+TypeScript)
 ## 主要ページ
@@ -109,6 +110,8 @@ PythonからembeddingをGoに返す。
 # 7. API仕様書 (REST for frontend, gRPC for service間)
 
 # 8. DBデータモデル
+
+# 9. gRPCとは？ なぜ使うのか？
 
 
 
