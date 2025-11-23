@@ -20,13 +20,14 @@ flowchart LR
 
 %% Frontend
 subgraph FE["Frontend (Next.js)"]
+    LOGIN["ログイン / 新規登録 UI"]
     UI["ユーザー UI 画像アップロード / 類似ユーザー一覧"]
 end
 
 %% Backend
 subgraph API_Layer["API Layer (Go)"]
     AUTH["Auth Handler (JWT/OAuth)"]
-    API["API Gateway (HTTP / gRPC)"]
+    UPLOAD["Upload Handler"]
     MATCH["Matcher Service (類似度計算・検索)"]
 end
 
@@ -45,17 +46,22 @@ subgraph EXT["External Services"]
     GCP["Google Cloud Vision API (検討中)"]
 end
 
-UI -->|画像アップロード| AUTH
-AUTH -->|JWT検証| API
+%% 認証フロー
+LOGIN -->|認証リクエスト| AUTH
+AUTH -->|JWT発行| LOGIN
 
-PY -->|Embedding生成| API
+%% 画像アップロードフロー
+UI -->|画像アップロード + JWT| UPLOAD
+UPLOAD -->|gRPC で画像パス送信| PY
+PY -->|Embedding生成| UPLOAD
 
-API -->|Embedding受取| MATCH
+UPLOAD -->|Embeddingを渡す| MATCH
 MATCH -->|pgvector検索| DB
-MATCH -->|類似ユーザー結果| API
-API -->|レスポンス返却| UI
+MATCH -->|類似ユーザー結果| UPLOAD
+UPLOAD -->|レスポンス返却| UI
 
-PY -->|顔検出API呼び出し| GCP
+%% 外部 API 呼び出し
+PY -->|顔検出 API 呼び出し| GCP
 ```
 
 # 2-add. アーキテクチャ詳細 (クリーンアーキテクチャ & DDD の採用)
