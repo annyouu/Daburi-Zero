@@ -45,7 +45,6 @@ subgraph EXT["External Services"]
     GCP["Google Cloud Vision API (検討中)"]
 end
 
-%% フロー
 UI -->|画像アップロード| AUTH
 AUTH -->|JWT検証| API
 API -->|画像データ送信 (gRPC)| PY
