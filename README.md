@@ -43,7 +43,7 @@ end
 %% External
 subgraph EXT["External Services"]
     GCP["Google Cloud Vision API (検討中)"]
-enda
+end
 ```
 
 # 2-add. アーキテクチャ詳細 (クリーンアーキテクチャ & DDD の採用)
