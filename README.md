@@ -47,7 +47,6 @@ end
 
 UI -->|画像アップロード| AUTH
 AUTH -->|JWT検証| API
-API -->|画像データ送信 (gRPC)| PY
 
 PY -->|Embedding生成| API
 
