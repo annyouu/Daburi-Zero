@@ -44,6 +44,20 @@ end
 subgraph EXT["External Services"]
     GCP["Google Cloud Vision API (検討中)"]
 end
+
+%% フロー
+UI -->|画像アップロード| AUTH
+AUTH -->|JWT検証| API
+API -->|画像データ送信 (gRPC)| PY
+
+PY -->|Embedding生成| API
+
+API -->|Embedding受取| MATCH
+MATCH -->|pgvector検索| DB
+MATCH -->|類似ユーザー結果| API
+API -->|レスポンス返却| UI
+
+PY -->|顔検出API呼び出し| GCP
 ```
 
 # 2-add. アーキテクチャ詳細 (クリーンアーキテクチャ & DDD の採用)
