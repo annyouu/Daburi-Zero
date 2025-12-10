@@ -69,6 +69,48 @@ PY -->|顔検出 API 呼び出し| GCP
 
 # 3. ディレクトリ構成
 ```
+go-backend/
+├── cmd/
+│   └── api/
+│       └── main.go           # エントリーポイント (DI、ルーティング設定、サーバー起動)
+├── internal/
+│   ├── domain/               # ビジネスロジックの中心 (外部ライブラリに依存しない)
+│   │   ├── entity/           # エンティティ & 値オブジェクト
+│   │   │   ├── user.go       # User Entity, UserId ValueObject
+│   │   │   └── face.go       # FaceEmbedding ValueObject
+│   │   ├── repository/       # リポジトリの「インターフェース」定義
+│   │   │   ├── user_repo.go
+│   │   │   └── face_repo.go
+│   │   └── service/          # ドメインサービス (純粋なドメインロジックがあれば)
+│   │       └── similarity.go # 例: 類似度判定の閾値ロジックなど
+│   │
+│   ├── usecase/              # アプリケーションロジック
+│   │   ├── user_usecase.go   # "ユーザー登録する" などの処理フロー
+│   │   ├── match_usecase.go  # "画像を元に類似ユーザーを探す" フロー
+│   │   └── inputport/        # UseCaseへの入力データの定義 (DTO的な役割)
+│   │
+│   ├── controller/            # 入出力の変換 (Controller/Presenter)
+│   │   ├── http/             # REST API ハンドラ (Echo/Ginなど)
+│   │   │   ├── handler.go
+│   │   │   ├── request.go    # JSONリクエストの構造体
+│   │   │   └── response.go   # JSONレスポンスの構造体
+│   │   └── websocket/        # チャット用 WebSocket ハンドラ
+│   │
+│   └── infrastructure/       # 技術的な詳細実装 (DB, 外部API)
+│       ├── persistence/      # リポジトリの実装、永続化処理 (PostgreSQL + pgvector)
+│       │   ├── db.go
+│       │   ├── user_repo_impl.go
+│       │   └── face_repo_impl.go
+│       ├── grpc/             # PythonサービスへのgRPCクライアント実装
+│       │   └── face_client.go
+│       └── router/           # Webフレームワークのルーティング設定
+│
+├── pkg/                      # プロジェクト外でも使える汎用ユーティリティ (Logger, Errorなど)
+├── api/                      # gRPCの .proto ファイル定義
+│   └── proto/
+│       └── face_service.proto
+├── go.mod
+└── go.sum
 ```
 
 <!-- websocketによるチャット機能をfrontendのflowchart LR追加する -->
