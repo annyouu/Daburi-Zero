@@ -68,7 +68,7 @@ erDiagram
 | ------------- | ------------ | ---------------- | --------------- |
 | id            | UUID         | PK               | ユーザーの主キーID      |
 | email         | VARCHAR(255) | UNIQUE, NOT NULL | 認証用メールアドレス      |
-| password_hash | VARCHAR(255) | NOT NULL         | パスワードのハッシュ値     |
+| password_hash | TEXT         | NOT NULL         | パスワードのハッシュ値     |
 | name          | VARCHAR(50)  | NOT NULL         | アプリ内で表示されるユーザー名 |
 | created_at    | TIMESTAMP    | NOT NULL         | 登録日時            |
 
