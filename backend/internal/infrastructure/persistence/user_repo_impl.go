@@ -92,6 +92,41 @@ func (r *usersRepositoryImpl) FindByID(ctx context.Context, id string) (*entity.
 
 }
 
+// FindByEmail メールアドレスによるユーザ検索
+func (r *usersRepositoryImpl) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
+	user := &entity.User{}
+
+	// クエリを定義
+	query := `
+    SELECT id, email, password_hash, name, created_at, updated_at
+    FROM users
+    WHERE email = $1
+    `
+
+	// QueryRowContextでクエリを実行し、行を取得
+	row := r.db.QueryRowContext(ctx, query, email)
+
+	// 取得した値をエンティティのフィールドに入れる
+	err := row.Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.Name,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	// エラーチェックを行う
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+            return nil, domain.ErrNotFound 
+        }
+		return nil, fmt.Errorf("userのemail検索に失敗しました: %w", err)
+	}
+
+	return user, nil
+}
+
 // Update ユーザー情報の更新
 func (r *usersRepositoryImpl) Update(ctx context.Context, user *entity.User) error {
 
