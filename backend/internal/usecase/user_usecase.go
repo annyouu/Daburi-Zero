@@ -92,19 +92,41 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 }
 
 // ログイン
-func (u *UserUseCase) Login() {
-	// 401
+func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dto.AuthTokenOutput, error) {
+	// 400 バリデーションチェック (400 Bad Request 相当)
+	if err := u.validator.Struct(input); err != nil {
+		return nil, domain.ErrInvalidInput
+	}
 
-	// 403
+	// 401 ユーザーの存在確認 (401 Unauthorized 相当)
+	user, err := u.userRepo.FindByEmail(ctx, input.Email)
+	if err != nil {
+		return nil, fmt.Errorf("userRepo.FindByEmailに失敗しました: %w", err)
+	}
 
-	// 404
+	// 401 パスワードの照合 (401 Unauthorized 相当)
+	// 入力されたパスワードとDBに保存されているハッシュ値を比較する
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password))
+	if err != nil {
+		return nil, domain.ErrInvalidCredentials
+	}
 
-	// 400
+	// 認証成功した場合：JWTのトークンを発行する
+	// ここでJWTで生成するが、今は固定値を返す
+	token := "generated"
+
+	return &dto.AuthTokenOutput{
+		Token: token,
+	}, nil
 }
 
 // プロフィール取得
 func (u *UserUseCase) GetProfile() {
-	
+	// ユーザーのIDの形式チェック
+
+	// リポジトリからユーザー取得
+
+	// 
 }
 
 // プロフィール更新
