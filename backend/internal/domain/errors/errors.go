@@ -14,6 +14,9 @@ var ErrInvalidInput = errors.New("invalid input data")
 // 登録しようとしたメールアドレスがすでにある
 var ErrEmailAlreadyExists = errors.New("email already exists")
 
+// 認証失敗
+var ErrInvalidCredentials = errors.New("invalid email or password")
+
 // ログイン時の認証情報が正しくない
 var ErrAuthenticationFailed = errors.New("authentication failed")
 
