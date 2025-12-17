@@ -163,10 +163,10 @@ func (u *UserUseCase) UpdateProfile(ctx context.Context, userID string, input *d
 		user.Name = input.Name
 	}
 
-	// if input.ProfileImageURL != "" {
-	// 	user.ProfileImageURL = input.ProfileImageURL
-	// }
-	
+	if input.ProfileImageURL != "" {
+		user.ProfileImageURL = input.ProfileImageURL
+	}
+
 	user.UpdatedAt = time.Now()
 
 	// リポジトリで更新
