@@ -80,6 +80,30 @@ func (h *UserHandler) Login(c *gin.Context) {
 // GET
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	// 本来はMiddlewareでセットされたuserIDを取得する
+	userID := c.GetString("userID")
+
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
+	output, err := h.userUseCase.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		if stdErrors.Is(err, appErrors.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "User not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Internal server error",
+		})
+		return
+	}
+	// 201
+	c.JSON(http.StatusOK, output)
 }
 
 // PATCH
