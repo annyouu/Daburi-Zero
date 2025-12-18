@@ -2,11 +2,11 @@ package usecase
 
 import (
 	"context"
-	"errors"
+	stdErrors "errors"
 	"fmt"
 	"time"
 
-	"destinyface/internal/errors"
+	appErrors "destinyface/internal/errors"
 	"destinyface/internal/domain/entity"
 	"destinyface/internal/domain/repository"
 	"destinyface/internal/usecase/dto"
@@ -45,7 +45,7 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 
 	// DTOタグに定義されたルールでバリデーションを実行
 	if err := u.validator.Struct(input); err != nil {
-		return nil, domain.ErrInvalidInput
+		return nil, appErrors.ErrInvalidInput
 	}
 
 	// Emailの重複チェック
@@ -53,10 +53,10 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 
 	// nilだったら、ユーザーが重複しているということ
 	if err == nil {
-		return nil, domain.ErrEmailAlreadyExists
+		return nil, appErrors.ErrEmailAlreadyExists
 	}
 
-	if !errors.Is(err, domain.ErrNotFound) {
+	if !stdErrors.Is(err, appErrors.ErrNotFound) {
 		return nil, fmt.Errorf("FindByEmailの処理に失敗しました: %w", err)
 	}
 
@@ -95,7 +95,7 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dto.AuthTokenOutput, error) {
 	// 400 バリデーションチェック (400 Bad Request 相当)
 	if err := u.validator.Struct(input); err != nil {
-		return nil, domain.ErrInvalidInput
+		return nil, appErrors.ErrInvalidInput
 	}
 
 	// 401 ユーザーの存在確認 (401 Unauthorized 相当)
@@ -108,7 +108,7 @@ func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dt
 	// 入力されたパスワードとDBに保存されているハッシュ値を比較する
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password))
 	if err != nil {
-		return nil, domain.ErrInvalidCredentials
+		return nil, appErrors.ErrInvalidCredentials
 	}
 
 	// 認証成功した場合：JWTのトークンを発行する
@@ -124,7 +124,7 @@ func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dt
 func (u *UserUseCase) GetProfile(ctx context.Context, userID string) (*dto.UserOutput, error) {
 	// ユーザーのIDの形式チェック
 	if userID == "" {
-		return nil, domain.ErrInvalidInput
+		return nil, appErrors.ErrInvalidInput
 	}
 
 	// リポジトリからユーザー取得
@@ -148,7 +148,7 @@ func (u *UserUseCase) GetProfile(ctx context.Context, userID string) (*dto.UserO
 func (u *UserUseCase) UpdateProfile(ctx context.Context, userID string, input *dto.UserUpdateInput) (*dto.UserOutput, error) {
 	// バリデーションチェック
 	if err := u.validator.Struct(input); err != nil {
-		return nil, domain.ErrInvalidInput
+		return nil, appErrors.ErrInvalidInput
 	}
 
 	// 更新対象のユーザーがいるかどうか確認
