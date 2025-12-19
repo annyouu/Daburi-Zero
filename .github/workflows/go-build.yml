@@ -1,30 +1,33 @@
 name: Go Build Check
 
-# いつ実行するか
 on:
   push:
-    branches: [ "main" ] # mainブランチにpushされたとき
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ] # mainブランチ向けのPRが作られたとき
-
+    branches: [ "main" ]
 jobs:
   build:
-    runs-on: ubuntu-latest # GitHubが貸してくれるLinuxマシン
+    runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: backend
+    
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4 # 自分のコードをマシンにコピーする
+      uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v5 # Goをインストールする
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.23' # 使っているGoのバージョンに合わせてください
+        go-version: '1.23'
+        cache-dependency-path: backend/go.sum
 
     - name: Install dependencies
-      run: go mod download # ライブラリをダウンロードする
+      run: go mod download
 
     - name: Build
-      run: go build -v ./... # プロジェクト全体をビルドする
+      run: go build -v ./...
 
     - name: Test
-      run: go test -v ./... # ついでにテストも実行する
+      run: go test -v ./...
