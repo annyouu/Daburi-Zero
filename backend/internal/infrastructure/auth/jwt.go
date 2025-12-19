@@ -1,16 +1,16 @@
 package auth
 
 import (
-	"errors"
-	"time"
+	// "errors"
+	// "time"
 
-	"github.com/golang-jwt/jwt/v5"
+	// "github.com/golang-jwt/jwt/v5"
 )
 
-type JWTService interface {
-	
-}
+// type JWTService interface {
 
-type jwtService struct {
+// }
 
-}
+// type jwtService struct {
+
+// }
