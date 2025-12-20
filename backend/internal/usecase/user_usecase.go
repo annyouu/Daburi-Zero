@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	appErrors "destinyface/internal/errors"
 	"destinyface/internal/domain/entity"
 	"destinyface/internal/domain/repository"
+	appErrors "destinyface/internal/errors"
+	"destinyface/internal/infrastructure/auth"
 	"destinyface/internal/usecase/dto"
 
 	"github.com/go-playground/validator/v10"
@@ -29,13 +30,15 @@ type UserUseCaseInterface interface {
 
 type UserUseCase struct {
 	userRepo repository.UserRepositoryInterface
+	jwtService auth.JWTServiceInterface
 	validator *validator.Validate
 }
 
 // コンストラクタ
-func NewUserUseCase(userRepo repository.UserRepositoryInterface) UserUseCaseInterface {
+func NewUserUseCase(userRepo repository.UserRepositoryInterface, jwtService auth.JWTServiceInterface) UserUseCaseInterface {
 	return &UserUseCase{
 		userRepo: userRepo,
+		jwtService: jwtService,
 		validator: validator.New(),
 	}
 }
@@ -82,11 +85,18 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 		return nil, fmt.Errorf("DBへの保存に失敗しました: %w", createdErr)
 	}
 
+	// トークンを生成する
+	token, err := u.jwtService.GenerateToken(newUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("トークン生成に失敗しました: %w", err)
+	}
+
 	// 成功レスポンスを返す
 	return &dto.UserOutput{
 		ID:    newUser.ID,
         Name:  newUser.Name,
         Email: newUser.Email,
+		Token: token,
 		CreatedAt: newUser.CreatedAt,
 	}, nil
 }
@@ -113,7 +123,11 @@ func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dt
 
 	// 認証成功した場合：JWTのトークンを発行する
 	// ここでJWTで生成するが、今は固定値を返す
-	token := "generated"
+	// token := "generated"
+	token, err := u.jwtService.GenerateToken(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("トークンの生成に失敗しました: %w", err)
+	}
 
 	return &dto.AuthTokenOutput{
 		Token: token,
@@ -179,6 +193,7 @@ func (u *UserUseCase) UpdateProfile(ctx context.Context, userID string, input *d
 		ID: user.ID,
 		Name: user.Name,
 		Email: user.Email,
+		ProfileImageURL: user.ProfileImageURL,
 		CreatedAt: user.CreatedAt,
 	}, nil
 }
