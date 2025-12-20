@@ -65,7 +65,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 
 	tokenOutput, err := h.userUseCase.Login(c.Request.Context(), &input)
 	if err != nil {
-		respondError(c, err)
+		// respondError(c, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, tokenOutput)
