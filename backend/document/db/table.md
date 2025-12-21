@@ -81,10 +81,10 @@ erDiagram
 | カラム名       | データ型        | 制約       | 説明             |
 | ---------- | ----------- | -------- | -------------- |
 | id         | UUID        | PK       | 顔データID         |
-| user_id    | UUID        | FK       | 関連するユーザーID     |
+| user_id    | UUID        | UNIQUE,FK       | 関連するユーザーID     |
 | embedding  | VECTOR(512) | NOT NULL | 512次元の顔特徴量ベクトル |
-| is_primary | BOOLEAN     | NOT NULL | メイン顔写真かどうかのフラグ |
 | created_at | TIMESTAMP   | NOT NULL | 登録日時           |
+| updateded_at    | TIMESTAMP    | NOT NULL         | 更新日時            |
 
 ## 2-3. **Likes テーブル（中間テーブル）**
 
