@@ -7,7 +7,7 @@ import (
 	"destinyface/internal/infrastructure/persistence"
 	"destinyface/internal/infrastructure/redis"
 	"destinyface/internal/presentation/controller"
-	"destinyface/internal/presentation/middleware"
+	// "destinyface/internal/presentation/middleware"
 	"destinyface/internal/usecase"
 
 	"github.com/gin-gonic/gin"
@@ -66,7 +66,7 @@ func main() {
 
 	// B. 認証必須ルート (ミドルウェアを適用)
 	userGroup := r.Group("/users")
-	userGroup.Use(middleware.UserAuthentication(jwtService))
+	// userGroup.Use(middleware.UserAuthentication(jwtService))
 	{
 		userGroup.GET("/me", userHandler.GetProfile)
 		userGroup.PATCH("/me", userHandler.UpdateProfile)
