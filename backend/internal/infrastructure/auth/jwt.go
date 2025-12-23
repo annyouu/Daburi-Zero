@@ -59,6 +59,7 @@ func (s *jwtService) ValidateToken(tokenString string) (string, error) {
 		return "", errors.New("invalid token")
 	}
 
+	// 型アサーション
 	claims, ok := token.Claims.(*customClaims)
 	if !ok {
 		return "", errors.New("invalid claims")
