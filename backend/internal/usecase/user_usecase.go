@@ -9,7 +9,6 @@ import (
 	"destinyface/internal/domain/entity"
 	"destinyface/internal/domain/repository"
 	appErrors "destinyface/internal/errors"
-	"destinyface/internal/infrastructure/auth"
 	"destinyface/internal/usecase/dto"
 
 	"github.com/go-playground/validator/v10"
@@ -30,15 +29,15 @@ type UserUseCaseInterface interface {
 
 type UserUseCase struct {
 	userRepo repository.UserRepositoryInterface
-	jwtService auth.JWTServiceInterface
+	sessionRepo repository.SessionRepositoryInterface
 	validator *validator.Validate
 }
 
 // コンストラクタ
-func NewUserUseCase(userRepo repository.UserRepositoryInterface, jwtService auth.JWTServiceInterface) UserUseCaseInterface {
+func NewUserUseCase(userRepo repository.UserRepositoryInterface, sessionRepo repository.SessionRepositoryInterface) UserUseCaseInterface {
 	return &UserUseCase{
 		userRepo: userRepo,
-		jwtService: jwtService,
+		sessionRepo: sessionRepo,
 		validator: validator.New(),
 	}
 }
@@ -85,10 +84,15 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 		return nil, fmt.Errorf("DBへの保存に失敗しました: %w", createdErr)
 	}
 
-	// トークンを生成する
-	token, err := u.jwtService.GenerateToken(newUser.ID)
+	// JWTトークン生成の代わりに、Redisセッションを作成
+	// token, err := u.jwtService.GenerateToken(newUser.ID)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("トークン生成に失敗しました: %w", err)
+	// }
+
+	sessionID, err := u.sessionRepo.CreateSession(ctx, newUser.ID)
 	if err != nil {
-		return nil, fmt.Errorf("トークン生成に失敗しました: %w", err)
+		return nil, fmt.Errorf("セッション生成に失敗しました: %w", err)
 	}
 
 	// 成功レスポンスを返す
@@ -96,7 +100,7 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 		ID:    newUser.ID,
         Name:  newUser.Name,
         Email: newUser.Email,
-		Token: token,
+		Token: sessionID,
 		CreatedAt: newUser.CreatedAt,
 	}, nil
 }
@@ -121,14 +125,19 @@ func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dt
 		return nil, appErrors.ErrInvalidCredentials
 	}
 
-	// 認証成功した場合：JWTのトークンを発行する
-	token, err := u.jwtService.GenerateToken(user.ID)
+	// 認証成功した場合：JWTのトークンを発行の代わりに、Redisセッション保存へ
+
+	// token, err := u.jwtService.GenerateToken(user.ID)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("トークンの生成に失敗しました: %w", err)
+	// }
+	sessionID, err := u.sessionRepo.CreateSession(ctx, user.ID)
 	if err != nil {
-		return nil, fmt.Errorf("トークンの生成に失敗しました: %w", err)
+		return nil, fmt.Errorf("セッションの生成に失敗しました: %w", err)
 	}
 
 	return &dto.AuthTokenOutput{
-		Token: token,
+		Token: sessionID,
 	}, nil
 }
 
