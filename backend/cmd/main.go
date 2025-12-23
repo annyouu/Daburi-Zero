@@ -4,14 +4,17 @@ import (
 	"log"
 	"os"
 
-	"destinyface/internal/presentation/controller"
-	"destinyface/internal/infrastructure/auth"
 	"destinyface/internal/infrastructure/persistence"
+	"destinyface/internal/infrastructure/redis"
+	"destinyface/internal/presentation/controller"
 	"destinyface/internal/presentation/middleware"
 	"destinyface/internal/usecase"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
+	goredis "github.com/redis/go-redis/v9"
+
 )
 
 func main() {
@@ -29,15 +32,24 @@ func main() {
 	log.Println("✅ Database connected")
 
 	// 3. インフラ層（技術的道具）の準備
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "default_secret" // MVP開発用。本番では必ず設定する
-	}
-	jwtService := auth.NewJWTService(jwtSecret)
+	// jwtSecret := os.Getenv("JWT_SECRET")
+	// if jwtSecret == "" {
+	// 	jwtSecret = "default_secret" // MVP開発用。本番では必ず設定する
+	// }
+	// jwtService := auth.NewJWTService(jwtSecret)
+
+	// Redisクライアントの初期化を追加
+	rdb := goredis.NewClient(&goredis.Options{
+        Addr:     "localhost:6379", 
+        Password: "",
+        DB: 0,
+    })
+	
+	sessionRepo := redis.NewSessionRepository(rdb)
 
 	// 4. 各層の依存注入 (DI)
 	userRepo := persistence.NewUserRepository(db) 
-	userUseCase := usecase.NewUserUseCase(userRepo, jwtService)
+	userUseCase := usecase.NewUserUseCase(userRepo, sessionRepo)
 	userHandler := controller.NewUserHandler(userUseCase)
 
 	// 5. サーバー設定 (Gin)
