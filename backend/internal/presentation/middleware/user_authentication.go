@@ -6,54 +6,55 @@ import (
 	"net/http"
 	"strings"
 
-	"destinyface/internal/infrastructure/auth"
+	"destinyface/internal/domain/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
-func UserAuthentication(jwtService auth.JWTServiceInterface) gin.HandlerFunc {
+func UserAuthentication(sessionRepo repository.SessionRepositoryInterface) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Authorizationヘッダーの取得
+		// AuthorizationヘッダーからセッションIDを取得する (Bearer <session_id>)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Authorizationヘッダーは必須です",
+				"error": "認証ヘッダーが必要です",
 			})
 			c.Abort()
 			return
 		}
 
-		// fmt.Println("authHeader:", authHeader)
-
-		// "Bearer <token>" 形式の分解とバリデーション
-		// Splitすると ["Bearer", "{token}"] というスライスになる想定
-		parts := strings.SplitN(authHeader, " ", 2)
+		// Bearerの部分を無くす
+		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Authorization header format must be Bearer {token}",
+				"error": "認証形式が正しくないです",
 			})
 			c.Abort()
 			return
 		}
+		sessionID := parts[1]
 
-		tokenString := parts[1]
-
-		// JWTの検証 (Infra層のJWTServiceのメソッドを呼び出す)
-		userID, err := jwtService.ValidateToken(tokenString)
-
-		// 検証失敗 (改ざんなどの可能性あり)
+		// JWTの解読ではなく、Redis(sessionRepo)でUserIDに問い合わせる
+		userID, err := sessionRepo.GetUserID(c.Request.Context(), sessionID)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "JWTの検証に失敗しました",
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "認証処理中にエラーが発生しました",
 			})
 			c.Abort()
 			return
 		}
 
-		// 成功なら
-		// ControllerでUserIDを使用できるようにする
-		c.Set("userID", userID)
+		// UserIDがない
+		if userID == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "セッションが切れているか無効です",
+			})
+			c.Abort()
+			return
+		}
 
+		// 取得したUserIDをContextにセットする
+		c.Set("user_id", userID)
 		c.Next()
 	}
 }
