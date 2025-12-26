@@ -16,7 +16,7 @@ sequenceDiagram
     API->>DB: ユーザー情報を保存
     DB-->>API: 保存完了 (UserIDを返却)
 
-    Note over API: ここからログイン処理
+    Note over API: ログイン処理も併用
     Note over API: セッションID (UUID) を生成
     API->>Redis: セッション保存 (Key: session:[ID], Value: UserID, TTL: 24h)
     Redis-->>API: OK
@@ -55,20 +55,21 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor User as クライアント
-    participant Mid as Middleware (認証)
-    participant Redis as Redis (Session Store)
-    participant Handler as エンドポイント (Handler)
+    participant Mid as Auth Middleware
+    participant Redis as Redis
+    participant Handler as Protected Handler
 
-    User->>Mid: APIリクエスト (Header: Authorization: [ID])
-    Mid->>Redis: セッション照会 (GET session:[ID])
+    User->>Mid: GET /me (SessionID)
+    Mid->>Redis: GET session:[ID]
 
     alt セッション有効
-        Redis-->>Mid: UserID (例: "123")
+        Redis-->>Mid: UserID
         Note over Mid: context に UserID をセット
-        Mid->>Handler: 処理を継続
-        Handler-->>User: 成功レスポンス (200 OK)
+        Mid->>Handler: 次の処理へ
+        Handler->>Redis: (必要に応じて) ユーザー情報取得
+        Handler-->>User: 200 OK + ユーザー詳細
     else セッション無効 / 期限切れ
-        Redis-->>Mid: nil (見つからない)
-        Mid-->>User: 401 Unauthorized (再ログインが必要)
+        Redis-->>Mid: nil
+        Mid-->>User: 401 Unauthorized
     end
 ```
