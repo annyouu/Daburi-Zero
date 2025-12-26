@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+# Goアプリケーションサービス
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    environment:
+      - DB_HOST=db          
+      - DB_PORT=5432
+      - DB_USER=mydestinyuser  
+      - DB_PASSWORD=mypassword 
+      - DB_NAME=destiny_db    
+    command: go run cmd/main.go
+    depends_on:
+      db:
+          condition: service_healthy
+      redis:
+          condition: service_started
+
+# PostgreSQLデータベースサービス (ユーザー情報、顔データ保存用)
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=mydestinyuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=destiny_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mydestinyuser -d destiny_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# Redisサービス (認証データ保存用)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"

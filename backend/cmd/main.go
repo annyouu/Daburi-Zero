@@ -41,7 +41,7 @@ func main() {
 
 	// Redisクライアントの初期化を追加
 	rdb := goredis.NewClient(&goredis.Options{
-        Addr:     "localhost:6379", 
+        Addr:     "redis: 6379", 
         Password: "",
         DB: 0,
     })
