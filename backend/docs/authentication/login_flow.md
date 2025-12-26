@@ -23,6 +23,7 @@ sequenceDiagram
 
 ## ログイン実行時 (セッション発行)
 既存ユーザーの認証を行い、新規セッションを開始するフローです。
+```mermaid
 sequenceDiagram
     autonumber
     actor User as クライアント
@@ -44,6 +45,7 @@ sequenceDiagram
     else 認証失敗
         API-->>User: 401 Unauthorized (パスワード不一致など)
     end
+```
 
 ## 認証が必要なリクエスト時 (Middleware)
 保護されたリソースへアクセスする際、セッションが有効かどうかを検証するフローです。
