@@ -32,13 +32,6 @@ func main() {
 	defer db.Close()
 	log.Println("✅ Database connected")
 
-	// 3. インフラ層（技術的道具）の準備
-	// jwtSecret := os.Getenv("JWT_SECRET")
-	// if jwtSecret == "" {
-	// 	jwtSecret = "default_secret" // MVP開発用。本番では必ず設定する
-	// }
-	// jwtService := auth.NewJWTService(jwtSecret)
-
 	// Redisクライアントの初期化を追加
 	rdb := goredis.NewClient(&goredis.Options{
         Addr:     "redis: 6379", 
@@ -67,7 +60,6 @@ func main() {
 
 	// B. 認証必須ルート (ミドルウェアを適用)
 	userGroup := r.Group("/users")
-	// userGroup.Use(middleware.UserAuthentication(jwtService))
 
 	// jwtServiceではなく、作成したsessionRepoを渡すように変更する
 	userGroup.Use(middleware.UserAuthentication(sessionRepo))
