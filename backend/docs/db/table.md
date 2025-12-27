@@ -70,7 +70,7 @@ erDiagram
 | email         | VARCHAR(255) | UNIQUE, NOT NULL | 認証用メールアドレス      |
 | password_hash | TEXT         | NOT NULL         | パスワードのハッシュ値     |
 | name          | VARCHAR(50)  | NOT NULL         | アプリ内で表示されるユーザー名 |
-| profile_image_url | TEXT     | NOT NULL         | 表示用写真のURLパス |
+| profile_image_url | TEXT     | なし         | 表示用写真のURLパス |
 | created_at    | TIMESTAMP    | NOT NULL         | 登録日時            |
 | updateded_at    | TIMESTAMP    | NOT NULL         | 更新日時            |
 
