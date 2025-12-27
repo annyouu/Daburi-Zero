@@ -2,10 +2,10 @@
 package middleware
 
 import (
-	// "fmt"
 	"net/http"
 	"strings"
 
+	"destinyface/internal/contextkey"
 	"destinyface/internal/domain/repository"
 
 	"github.com/gin-gonic/gin"
@@ -54,7 +54,7 @@ func UserAuthentication(sessionRepo repository.SessionRepositoryInterface) gin.H
 		}
 
 		// 取得したUserIDをContextにセットする
-		c.Set("user_id", userID)
+		c.Set(contextkey.UserID, userID)
 		c.Next()
 	}
 }
