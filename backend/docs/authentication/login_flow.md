@@ -56,7 +56,9 @@ sequenceDiagram
     autonumber
     actor User as クライアント
     participant Mid as Auth Middleware
-    participant Redis as Redis
+    participant Redis as Redis (Session Store)
+    participant Repo as User Repository
+    participant DB as PostgreSQL
     participant Handler as Protected Handler
 
     User->>Mid: GET /me (SessionID)
@@ -66,7 +68,10 @@ sequenceDiagram
         Redis-->>Mid: UserID
         Note over Mid: context に UserID をセット
         Mid->>Handler: 次の処理へ
-        Handler->>Redis: (必要に応じて) ユーザー情報取得
+        Handler->>Repo: GetUserByID(UserID)
+        Repo->>DB: SELECT * FROM users WHERE id = ?
+        DB-->>Repo: ユーザーデータ
+        Repo-->>Handler: ユーザー詳細
         Handler-->>User: 200 OK + ユーザー詳細
     else セッション無効 / 期限切れ
         Redis-->>Mid: nil
