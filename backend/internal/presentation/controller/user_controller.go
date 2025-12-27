@@ -2,12 +2,15 @@ package controller
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"destinyface/internal/contextkey"
 	appErrors "destinyface/internal/errors"
 	"destinyface/internal/usecase"
 	"destinyface/internal/usecase/dto"
+
+	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
@@ -21,6 +24,8 @@ func NewUserHandler(u usecase.UserUseCaseInterface) *UserHandler {
 }
 
 func respondError(c *gin.Context, err error) {
+	
+	log.Printf("[Handler Error] Detail: %+v", err)
     switch {
     case errors.Is(err, appErrors.ErrNotFound):
         c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
@@ -29,7 +34,10 @@ func respondError(c *gin.Context, err error) {
     case errors.Is(err, appErrors.ErrInvalidCredentials):
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
     default:
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+        c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Internal server error",
+			"debug_message": err.Error(),
+		})
     }
 }
 
@@ -74,8 +82,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 
 // GET
 func (h *UserHandler) GetProfile(c *gin.Context) {
-	// 本来はMiddlewareでセットされたuserIDを取得する
-	userID := c.GetString("userID")
+	// Redisに保存されたuserIDを取得する
+	userID := c.GetString(contextkey.UserID)
 
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -94,7 +102,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 
 // PATCH
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
-	userID := c.GetString("userID")
+	userID := c.GetString(contextkey.UserID)
 
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{
