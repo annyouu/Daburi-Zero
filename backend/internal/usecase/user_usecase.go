@@ -85,11 +85,6 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 	}
 
 	// JWTトークン生成の代わりに、Redisセッションを作成
-	// token, err := u.jwtService.GenerateToken(newUser.ID)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("トークン生成に失敗しました: %w", err)
-	// }
-
 	sessionID, err := u.sessionRepo.CreateSession(ctx, newUser.ID)
 	if err != nil {
 		return nil, fmt.Errorf("セッション生成に失敗しました: %w", err)
@@ -126,11 +121,6 @@ func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dt
 	}
 
 	// 認証成功した場合：JWTのトークンを発行の代わりに、Redisセッション保存へ
-
-	// token, err := u.jwtService.GenerateToken(user.ID)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("トークンの生成に失敗しました: %w", err)
-	// }
 	sessionID, err := u.sessionRepo.CreateSession(ctx, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("セッションの生成に失敗しました: %w", err)
