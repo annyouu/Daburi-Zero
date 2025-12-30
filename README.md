@@ -93,7 +93,8 @@ PY -->|顔検出 API 呼び出し| GCP
 ```
 
 # 3. ディレクトリ構成
-```
+
+```backend
 go-backend/
 ├── cmd/
 │   └── api/
@@ -136,6 +137,37 @@ go-backend/
 │       └── face_service.proto
 ├── go.mod
 └── go.sum
+```
+
+```frontend
+src/
+├── app/                        # 1. ルーティング (Next.js App Router)
+│   ├── layout.tsx              # 全体共通（フォント、ヘッダー、フッター）
+│   ├── page.tsx                # ランディングページ (Desktop-2)
+│   ├── login/
+│   │   └── page.tsx            # ログイン画面 (Desktop-1)
+│   ├── signup/
+│   │   └── page.tsx            # 新規登録画面
+│   └── onboarding/
+│       └── page.tsx            # 登録後フロー (名前入力、顔登録など)
+├── components/                 # 2. ロジックを持たない共通UI部品
+│   ├── Button.tsx              # Tailwindで装飾したボタン
+│   ├── Input.tsx               # 入力フォーム部品
+│   └── Card.tsx                # 白い枠線などの共通コンテナ
+├── features/                   # 3. 画面（機能）ごとのロジックと部品
+│   ├── common/                 # 複数機能で使うロジック入り部品
+│   └── routes/                 # 特定ページ専用のコンポーネント
+│       ├── auth/               # ログイン・新規登録用
+│       │   ├── components/     # LoginForm.tsx, SignupForm.tsx
+│       │   ├── hooks.ts        # ログイン処理、バリデーション
+│       │   └── endpoint.ts     # Go APIを叩く関数 (Infrastructure)
+│       └── onboarding/         # 登録後のステップ用 (FigmaのDesktop-14等)
+│           ├── components/     # NameForm.tsx, FaceUpload.tsx
+│           ├── hooks.ts        # ステップ管理、アニメーション制御
+│           └── endpoint.ts     # プロフィール保存API
+├── hooks/                      # 4. プロジェクト全体で使うReact Hooks
+├── utils/                      # 5. 純粋な関数（日付変換、エラー処理など）
+└── constants/                  # 6. 定数（APIのベースURL、文言など）
 ```
 
 <!-- websocketによるチャット機能をfrontendのflowchart LR追加する -->
