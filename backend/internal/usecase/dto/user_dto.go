@@ -48,4 +48,5 @@ type UserOutput struct {
 // ログイン成功時にトークンを返す用
 type AuthTokenOutput struct {
 	Token string `json:"token"`
+	Status string    `json:"status"`
 }
