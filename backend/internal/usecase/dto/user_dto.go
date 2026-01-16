@@ -35,6 +35,7 @@ type UserUpdateInput struct {
 // -- 出力データ --
 
 // ユーザー情報を返す用
+// Updateは現在、最後に更新された日時など表示する予定はないので入れない
 type UserOutput struct {
 	ID string  `json:"id"`
 	Name string  `json:"name"`
