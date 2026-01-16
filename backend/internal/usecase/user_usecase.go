@@ -25,6 +25,10 @@ type UserUseCaseInterface interface {
 	GetProfile(ctx context.Context, userID string) (*dto.UserOutput, error)
 	// プロフィール更新
 	UpdateProfile(ctx context.Context, userID string, input *dto.UserUpdateInput) (*dto.UserOutput, error)
+
+	// 確認フェーズ
+	SetupName(ctx context.Context, userID string, input *dto.UserSetupNameInput) (*dto.UserOutput, error)
+	SetupImage(ctx context.Context, userID string, input *dto.UserSetupImageInput) (*dto.UserOutput, error)
 }
 
 type UserUseCase struct {
@@ -74,7 +78,7 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 		ID:           uuid.New().String(),
         Email:        input.Email,
         PasswordHash: string(hashedPassword),
-        Name:         input.Name,
+		Status: "PENDING_NAME",
         CreatedAt:    now,
         UpdatedAt:    now,
 	}
@@ -93,10 +97,63 @@ func (u *UserUseCase) Register(ctx context.Context, input *dto.UserRegisterInput
 	// 成功レスポンスを返す
 	return &dto.UserOutput{
 		ID:    newUser.ID,
-        Name:  newUser.Name,
         Email: newUser.Email,
+		Status: newUser.Status,
 		Token: sessionID,
 		CreatedAt: newUser.CreatedAt,
+	}, nil
+}
+
+func (u *UserUseCase) SetupName(ctx context.Context, userID string, input *dto.UserSetupNameInput) (*dto.UserOutput, error) {
+	user, err := u.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 状態チェック
+	if user.Status != "PENDING_NAME" {
+		return nil, fmt.Errorf("invalid status for name setup: %s", user.Status)
+	}
+
+	user.Name = input.Name
+	user.Status = "PENDING_IMAGE"
+	user.UpdatedAt = time.Now()
+
+	if err := u.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return &dto.UserOutput{
+		ID: user.ID,
+		Name: user.Name,
+		Status: user.Status,
+	}, nil
+}
+
+func (u *UserUseCase) SetupImage(ctx context.Context, userID string, input *dto.UserSetupImageInput) (*dto.UserOutput, error) {
+	user, err := u.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 状態チェック
+	if user.Status != "PENDING_IMAGE" {
+		return nil, fmt.Errorf("invalid status for name setup: %s", user.Status)
+	}
+
+	user.ProfileImageURL = input.ProfileImageURL
+	user.Status = "ACTIVE"
+	user.UpdatedAt = time.Now()
+
+	if err := u.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return &dto.UserOutput{
+		ID: user.ID,
+		Name: user.Name,
+		ProfileImageURL: user.ProfileImageURL,
+		Status: user.Status,
 	}, nil
 }
 
@@ -128,6 +185,7 @@ func (u *UserUseCase) Login(ctx context.Context, input *dto.UserLoginInput) (*dt
 
 	return &dto.AuthTokenOutput{
 		Token: sessionID,
+		Status: user.Status,
 	}, nil
 }
 
@@ -151,6 +209,7 @@ func (u *UserUseCase) GetProfile(ctx context.Context, userID string) (*dto.UserO
 		ID: user.ID,
 		Name: user.Name,
 		Email: user.Email,
+		ProfileImageURL: user.ProfileImageURL,
 		CreatedAt: user.CreatedAt,
 	}, nil
 }
