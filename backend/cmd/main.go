@@ -66,6 +66,10 @@ func main() {
 	{
 		userGroup.GET("/me", userHandler.GetProfile)
 		userGroup.PATCH("/me", userHandler.UpdateProfile)
+
+		// 追加
+		userGroup.PATCH("/setup/name", userHandler.SetupName)
+		userGroup.PATCH("/setup/image", userHandler.SetupImage)
 	}
 
 	// 6. 起動
