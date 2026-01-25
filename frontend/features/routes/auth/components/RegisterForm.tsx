@@ -3,12 +3,23 @@
 import { useState } from "react";
 import { Input } from "@/components/Input";
 import Link from "next/link";
+import { useAuth } from "../hooks";
 
-export const SignupForm = () => {
+export const RegisterForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const isEnabled = email !== "" && password !== "";
+  const {register, isLoading } = useAuth();
+
+  const isEnabled = email !== "" && password !== "" && !isLoading;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await register({
+      email,
+      password,
+    });
+  };
 
   return (
     <div className="w-full p-8 space-y-8 bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -19,14 +30,15 @@ export const SignupForm = () => {
         <h2 className="text-xl font-medium text-gray-600">新規登録</h2>
       </div>
 
-      <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+      <form className="space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-4">
           <Input
             label="Email"
             type="email"
-            placeholder="example@mail.com"
+            placeholder="example@gmail.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
 
           <Input
@@ -35,6 +47,7 @@ export const SignupForm = () => {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
           />
         </div>
 
