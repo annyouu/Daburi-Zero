@@ -27,8 +27,9 @@ func NewUserRepository(db *sql.DB) repository.UserRepositoryInterface {
 func (r *usersRepositoryImpl) Create(ctx context.Context, user *entity.User) error {
 	// INSERTクエリ
 	query := `
-    INSERT INTO users (id, email, password_hash, name, profile_image_url, status, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    INSERT INTO users (email, password_hash, name, profile_image_url, status, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING id
     `
 
 	if user.Status == "" {
@@ -42,16 +43,17 @@ func (r *usersRepositoryImpl) Create(ctx context.Context, user *entity.User) err
         user.UpdatedAt = time.Now()
     }
 
-	_, err := r.db.ExecContext(
+	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		user.ID,
 		user.Email,
 		user.PasswordHash,
 		user.Name,
+		user.ProfileImageURL,
+		user.Status,
 		user.CreatedAt,
 		user.UpdatedAt,
-	)
+	).Scan(&user.ID)
 
 	if err != nil {
 		return fmt.Errorf("userの作成に失敗しました: %w", err)
