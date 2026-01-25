@@ -1,9 +1,17 @@
+import Cookies from "js-cookie";
+
 export const apiClient = {
     // <>でのジェネリクス追加で、呼び出し側で型を指定できるようにする
     async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
         const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
         const url = `${BASE_URL}${endpoint}`;
         const headers = new Headers(options.headers);
+
+        // Cookieからトークンを取得する
+        const token = Cookies.get("token");
+        if (token) {
+            headers.set("Authorization", `Bearer ${token}`);
+        }
 
         if (!(options.body instanceof FormData)) {
             headers.set("Content-Type", "application/json");
