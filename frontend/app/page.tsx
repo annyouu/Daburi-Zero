@@ -9,7 +9,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/signup");
+      router.push("/register");
     }, 2500);
 
     return () => clearTimeout(timer);
