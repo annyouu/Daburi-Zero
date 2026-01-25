@@ -1,4 +1,4 @@
-# API仕様書(V2.0)
+# API仕様書 (V2.0)
 
 1. 認証・アカウント系 (/auth)
 - POST /auth/register: 新規会員登録。セッションを作成し、Cookieをセットする。
