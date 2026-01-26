@@ -17,17 +17,18 @@ export const useSetup = () => {
             case "PENDING_NAME":
                 router.push("/setup/name");
                 break;
-
         }
     };
 
     const submitName = async (name: string) => {
         const res = await setupEndpoints.updateName(name);
+        console.log("submitNameの中身：", res);
         navigateByStatus(res.status);
     };
 
     const submitImage = async (url: string) => {
         const res = await setupEndpoints.updateImage(url);
+        console.log("submitImageの中身：", res);
         navigateByStatus(res.status);
     };
 
