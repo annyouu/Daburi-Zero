@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import Cookies from "js-cookie";
-import { authEndpoints } from "./endpoint"
+import { authEndpoints } from "./api/endpoint"
 import { useSetup } from "../setup/hooks";
 import { UserRegisterInput ,UserLoginInput } from "@/type/user";
 
