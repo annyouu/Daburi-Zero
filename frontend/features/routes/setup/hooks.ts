@@ -1,12 +1,13 @@
 // APIを叩いた後の画面遷移ロジックを書く役割
 import { useRouter } from "next/navigation";
-import { setupEndpoints } from "./endpoint";
+import { setupEndpoints } from "./api/endpoint";
 import { UserStatus } from "@/type/user";
 
 export const useSetup = () => {
     const router = useRouter();
 
     const navigateByStatus = (status: UserStatus) => {
+        console.log(`=== ステータス判定: ${status} ===`);
         switch (status) {
             case "ACTIVE":
                 router.push("/home");
@@ -26,8 +27,13 @@ export const useSetup = () => {
         navigateByStatus(res.status);
     };
 
-    const submitImage = async (url: string) => {
-        const res = await setupEndpoints.updateImage(url);
+    const submitImage = async (file: File) => {
+        // ファイルをFormDataに変換
+        const formData = new FormData();
+        // face_imageのキー名はバックエンドと合わせる
+        formData.append("face_image", file);
+
+        const res = await setupEndpoints.updateImage(formData);
         console.log("submitImageの中身：", res);
         navigateByStatus(res.status);
     };
