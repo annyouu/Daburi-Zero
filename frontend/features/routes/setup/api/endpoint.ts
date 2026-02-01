@@ -8,10 +8,10 @@ export const setupEndpoints = {
 
   // 画像設定
   updateImage: (formData: FormData) =>
-    apiClient.patch<UserResponse>("/users/setup/image", formData, {
+    apiClient.post<UserResponse>("/users/setup/image", formData, {
       headers: {
         // ファイル送信にはこのヘッダーが必要
-        "Content-Type": "multipart/form-data", 
+        // "Content-Type": "multipart/form-data", 
       },
     }),
 };
