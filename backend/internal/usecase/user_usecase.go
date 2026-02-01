@@ -125,6 +125,7 @@ func (u *UserUseCase) SetupName(ctx context.Context, userID string, input *dto.U
 	return &dto.UserOutput{
 		ID: user.ID,
 		Name: user.Name,
+		Email: user.Email,
 		Status: user.Status,
 	}, nil
 }
