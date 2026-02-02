@@ -91,7 +91,7 @@ flowchart TB
     %% 検索・登録の共通：ベクトル化
     FE_API --> CRUD
     CRUD <--> GRPC_C
-    GRPC_C <== "gRPC (画像 ↔ ベクトル)" ==> PY_GRPC
+    GRPC_C <-- "gRPC (画像 ↔ ベクトル)" --> PY_GRPC
     PY_GRPC <--> ML
 
     %% DB操作：CRUDだけでなく検索も含む
