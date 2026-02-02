@@ -62,33 +62,44 @@
 # 2. 全体図
 ```mermaid
 flowchart TB
- subgraph FE["フロントエンド (Next.js)"]
-        USER["ユーザー操作（撮影/検索/管理）"]
+    subgraph FE["フロントエンド (Next.js)"]
+        USER["ユーザー操作（撮影/検索/管理/登録）"]
         FE_API["APIリクエスト送信"]
-  end
- subgraph BE["バックエンド (Go/DB)"]
+    end
+
+    subgraph BE["バックエンド (Go/DB)"]
         AUTH["認証処理 (Go)"]
-        CRUD["在庫CRUDAPI (Go)"]
-        DB["DB/画像ストレージ"]
-        GRPC_CLIENT["gRPCクライアント（Go）"]
-  end
- subgraph PY["AIサーバ (Python ML)"]
-        PY_GRPC["gRPCサーバ（Python）"]
-        ML["AI解析・特徴量抽出 (Python)"]
-  end
-    PY_GRPC --> ML
-    ML --> PY_GRPC
+        
+        subgraph LOGIC["ビジネスロジック (Go)"]
+            CRUD["在庫CRUD / 検索ロジックAPI"]
+            GRPC_C["gRPCクライアント"]
+        end
+        
+        DB[("PostgreSQL (pgvector)<br/>+ 画像ストレージ")]
+    end
+
+    subgraph PY["AIサーバ (Python ML)"]
+        PY_GRPC["gRPCサーバ"]
+        ML["特徴量抽出 (ResNet/ViT)"]
+    end
+
+    %% --- 処理の流れ ---
     USER --> FE_API
-    FE_API --> AUTH & CRUD & GRPC_CLIENT
-    CRUD --> DB
-    DB --> CRUD
-    GRPC_CLIENT --> CRUD
-    GRPC_CLIENT -- gRPC --> PY_GRPC
-    PY_GRPC -- gRPCレスポンス --> GRPC_CLIENT
-    AUTH -- 認証結果/セッション --> FE_API
-    CRUD -- 在庫一覧/編集結果 --> FE_API
-    GRPC_CLIENT -- AI結果 --> FE_API
-    FE_API -- フィードバック表示 --> USER
+    FE_API --> AUTH
+    AUTH --> FE_API
+    
+    %% 検索・登録の共通：ベクトル化
+    FE_API --> CRUD
+    CRUD <--> GRPC_C
+    GRPC_C <== "gRPC (画像 ↔ ベクトル)" ==> PY_GRPC
+    PY_GRPC <--> ML
+
+    %% DB操作：CRUDだけでなく検索も含む
+    CRUD <--> DB
+    
+    %% 結果返却
+    CRUD --> FE_API
+    FE_API --> USER
 ```
 
 # 3. ディレクトリ構成
@@ -97,43 +108,45 @@ backend
 go-backend/
 ├── cmd/
 │   └── api/
-│       └── main.go           # エントリーポイント (DI、ルーティング設定、サーバー起動)
+│       └── main.go           # エントリーポイント (DB/Redis接続、DI、サーバー起動)
 ├── internal/
-│   ├── domain/               # ビジネスロジックの中心 (外部ライブラリに依存しない)
-│   │   ├── entity/           # エンティティ & 値オブジェクト
-│   │   │   ├── user.go       # User Entity, UserId ValueObject
-│   │   │   └── face.go       # FaceEmbedding ValueObject
-│   │   ├── repository/       # リポジトリの「インターフェース」定義
-│   │   │   ├── user_repo.go
-│   │   │   └── face_repo.go
-│   │   └── service/          # ドメインサービス (純粋なドメインロジックがあれば)
-│   │       └── similarity.go # 例: 類似度判定の閾値ロジックなど
+│   ├── domain/               # ビジネスロジックの中心 (外部に依存しない純粋な定義)
+│   │   ├── entity/           # エンティティ (データ構造)
+│   │   │   ├── user.go       # User (ID, Email, PasswordHash)
+│   │   │   └── item.go       # Item (ID, Name, ImageURL, Embedding, Status)
+│   │   ├── repository/       # インターフェース定義
+│   │   │   ├── user_repo.go  # Userデータの永続化IF
+│   │   │   └── item_repo.go  # Itemデータの永続化IF (pgvector検索含む)
+│   │   └── service/          # ドメインサービス
+│   │       └── matching.go   # 類似度(%)に基づいた判定ロジック (95%なら一致など)
 │   │
-│   ├── usecase/              # アプリケーションロジック
-│   │   ├── user_usecase.go   # "ユーザー登録する" などの処理フロー
-│   │   ├── match_usecase.go  # "画像を元に類似ユーザーを探す" フロー
-│   │   └── inputport/        # UseCaseへの入力データの定義 (DTO的な役割)
+│   ├── usecase/              # アプリケーションロジック (ユースケース)
+│   │   ├── auth_usecase.go   # ログイン・セッション管理 (Redis連携)
+│   │   ├── item_usecase.go   # 商品登録、一覧取得、更新、削除
+│   │   ├── search_usecase.go # 店頭照合 (画像送信 -> ベクトル化 -> 近傍検索)
+│   │   └── inputport/        # DTO (リクエスト/レスポンス用データ構造)
 │   │
-│   ├── controller/            # 入出力の変換 (Controller/Presenter)
-│   │   ├── http/             # REST API ハンドラ (Echo/Ginなど)
-│   │   │   ├── handler.go
-│   │   │   ├── request.go    # JSONリクエストの構造体
-│   │   │   └── response.go   # JSONレスポンスの構造体
-│   │   └── websocket/        # チャット用 WebSocket ハンドラ
+│   ├── presentation/         # 外部との接点（ここを Presentation に変更）
+│   │   │   ├── controller/   # (item_handler.go など)
+│   │   │   └── middleware/
 │   │
-│   └── infrastructure/       # 技術的な詳細実装 (DB, 外部API)
-│       ├── persistence/      # リポジトリの実装、永続化処理 (PostgreSQL + pgvector)
-│       │   ├── db.go
-│       │   ├── user_repo_impl.go
-│       │   └── face_repo_impl.go
-│       ├── grpc/             # PythonサービスへのgRPCクライアント実装
-│       │   └── face_client.go
-│       └── router/           # Webフレームワークのルーティング設定
+│   └── infrastructure/       # 技術的な詳細実装
+│       ├── persistence/      # リポジトリの実装 (PostgreSQL + pgvector)
+│       │   ├── db.go         # SQL接続管理
+│       │   ├── user_repo.go  # usersテーブル操作
+│       │   └── item_repo.go  # itemsテーブル & vector検索操作
+│       ├── redis/            # Redisクライアント (セッション保存/取得)
+│       │   └── session.go
+│       ├── grpc/             # ML Layer (Python) へのクライアント
+│       │   └── ml_client.go  # 画像を投げて「ベクトルと名前」を受け取る
+│       ├── storage/          # オブジェクトストレージ (MinIO/S3)
+│       │   └── image_store.go
+│       └── router/           # Echo/Gin などのルーティング設定
 │
-├── pkg/                      # プロジェクト外でも使える汎用ユーティリティ (Logger, Errorなど)
-├── api/                      # gRPCの .proto ファイル定義
+├── pkg/                      # 汎用ツール (Logger, Config, Errors)
+├── api/                      # 通信定義
 │   └── proto/
-│       └── face_service.proto
+│       └── ml_service.proto  # Python側との通信定義 (AnalyzeImage RPCなど)
 ├── go.mod
 └── go.sum
 ```
