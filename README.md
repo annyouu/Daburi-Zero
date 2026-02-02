@@ -39,89 +39,56 @@
 
 # 2. 全体図
 ```mermaid
-flowchart LR
-  %% --- Clients ---
-  subgraph ClientSide["Client / 店頭 (スマホアプリ)"]
-    MobileCam[カメラ撮影\n(写真)]
-    MobileApp[モバイルアプリ\n(撮影→送信/オンデバイス検索)]
-    LocalIndex[オプション: ローカルANN\n(FAISS/HNSW) ※オフライン支援]
-  end
+flowchart TD
 
-  %% --- Edge / Gateway ---
-  subgraph Gateway["gRPC Gateway / API Gateway"]
-    GRPCGW[gRPC \n(認証付き) / TLS]
-    RESTGW[HTTP(s) (管理UI用)]
-  end
+%% Frontend
+subgraph FE["Frontend (Next.js / Mobile)"]
+    UI["カメラUI / 在庫一覧 / 照合結果表示"]
+end
 
-  %% --- Backend Services ---
-  subgraph Backend["Backend (K8s / VM群)"]
-    AuthSvc[Auth Service\n(ID/PW, bcrypt)\nRedis: セッション管理]
-    UploadSvc[Upload Service\n(画像受取 -> オブジェクトストレージへ)]
-    Vectorizer[Vectorizer Service\n(Python: CLIP / ViT 等)\n特徴量ベクトル生成]
-    Worker[Background Worker\n(ジョブ: 変換/再ベクトル化/同期)]
-    SearchSvc[Search Service\n(類似度検索API)]
-    CompareSvc[比較表示ロジック\n(％表示・画像差分)]
-    SyncSvc[Sync Service\n(Edge ↔ 中央 同期)]
-    MQ[Message Queue\n(RabbitMQ / Kafka / Redis Streams)]
-  end
+%% Backend
+subgraph API_Layer["API Layer (Go)"]
+    AUTH["Auth Handler (ログイン/認証)"]
+    INV["Inventory Handler (CRUD)"]
+    SEARCH["Search Engine (類似度検索)"]
+    GRPC_C["gRPC Client"]
+end
 
-  %% --- Storage ---
-  subgraph Storage["データストア"]
-    ObjStore[Object Storage\n(S3 / MinIO) : 元画像]
-    Postgres[Postgres + pgvector\n(ベクトル + メタデータ)]
-    Redis[Redis\n(セッション / TTL キャッシュ)]
-  end
+%% Middlewares & DB
+subgraph Storage["Storage Layer"]
+    REDIS[("Redis")]
+    DB[("PostgreSQL + pgvector (Meta & Vectors)")]
+    MINIO[("Object Storage / S3 (Images)")]
+end
 
-  %% --- Edge Device (Optional) ---
-  subgraph Edge["店頭ローカルノード (オフライン向け)"]
-    EdgeSvc[Edge Search Service\n(軽量 gRPC サーバ)]
-    EdgeIndex[ローカルベクトルDB\n(FAISS / hnswlib / sqlite+pgvector-lite)]
-    EdgeSync[同期クライアント\n(差分ダウンロード)]
-  end
+%% ML Server
+subgraph PY_Layer["ML Layer (Python)"]
+    PY_SERVER["gRPC Server"]
+    FEAT["Feature Extractor (ViT)"]
+    NAMING["Product Naming (OCR / VLM)"]
+end
 
-  %% --- Admin/UI ---
-  subgraph UI["管理UI / Web Dashboard"]
-    AdminWeb[在庫一覧 / 編集\n(商品編集, 削除, 再登録)]
-  end
+%% フロー定義
+UI <-->|1. ログイン/セッション確認| AUTH
+AUTH <--> REDIS
 
-  %% --- Flows: 登録 (Create) ---
-  MobileCam -->|撮影| MobileApp
-  MobileApp -->|gRPC Upload (画像 + metadata)| GRPCGW
-  GRPCGW -->|認可トークン| AuthSvc
-  GRPCGW -->|enqueue: upload_job| MQ
-  MQ --> Worker
-  Worker -->|store image| ObjStore
-  Worker -->|call| Vectorizer
-  Vectorizer -->|vector| Postgres
-  Worker -->|insert metadata| Postgres
+UI --->|2. 商品撮影アップロード| INV
+INV --->|3. 画像解析依頼| GRPC_C
+GRPC_C <--- gRPC ---> PY_SERVER
 
-  %% --- Flows: 検索 (Query) ---
-  MobileApp -->|gRPC: search(image)| GRPCGW
-  GRPCGW --> AuthSvc
-  GRPCGW --> SearchSvc
-  SearchSvc -->|if central| Postgres
-  SearchSvc -->|return top-N (id, similarity)| Postgres
-  SearchSvc --> CompareSvc
-  CompareSvc --> ObjStore
-  CompareSvc -->|結果| GRPCGW
-  GRPCGW -->|response| MobileApp
+subgraph PY_Process["Python解析プロセス"]
+    PY_SERVER --> FEAT
+    PY_SERVER --> NAMING
+end
 
-  %% --- Edge search flow (低遅延 / オフライン) ---
-  MobileApp -->|オンデバイス検索| LocalIndex
-  MobileApp -->|gRPC -> Edge Node（ローカル）| EdgeSvc
-  EdgeSvc --> EdgeIndex
-  EdgeIndex -->|hit| EdgeSvc
-  EdgeSvc -->|比較結果| MobileApp
-  EdgeSync -->|差分同期| SyncSvc
-  SyncSvc --> Postgres
-  SyncSvc --> EdgeIndex
+FEAT -->|ベクトルデータ| GRPC_C
+NAMING -->|推論された商品名| GRPC_C
 
-  %% --- その他連携 ---
-  AdminWeb -->|管理API (REST)| RESTGW
-  RESTGW --> AuthSvc
-  RESTGW --> Postgres
-  AuthSvc --> Redis
-  SearchSvc --> Redis
+INV --->|4. メタデータ & ベクトル保存| DB
+INV --->|5. 元画像保存| MINIO
+
+SEARCH --->|6. ベクトル近傍探索| DB
+SEARCH ---> UI
 ```
 
 # 3. ディレクトリ構成
