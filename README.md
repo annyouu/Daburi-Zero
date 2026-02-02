@@ -39,62 +39,89 @@
 
 # 2. 全体図
 ```mermaid
-flowchart TD
+flowchart LR
+  %% --- Clients ---
+  subgraph ClientSide["Client / 店頭 (スマホアプリ)"]
+    MobileCam[カメラ撮影\n(写真)]
+    MobileApp[モバイルアプリ\n(撮影→送信/オンデバイス検索)]
+    LocalIndex[オプション: ローカルANN\n(FAISS/HNSW) ※オフライン支援]
+  end
 
-%% Frontend: ユーザー接点
-subgraph FE["Frontend (Next.js Mobile)"]
-    UI["UI: カメラ撮影 / 在庫リスト / 照合結果"]
-    SDK["API Client (fetch/axios)"]
-end
+  %% --- Edge / Gateway ---
+  subgraph Gateway["gRPC Gateway / API Gateway"]
+    GRPCGW[gRPC \n(認証付き) / TLS]
+    RESTGW[HTTP(s) (管理UI用)]
+  end
 
-%% Backend: 司令塔 (Go)
-subgraph Go["Backend API (Go)"]
-    direction TB
-    MW["Auth Middleware (Session Check)"]
-    
-    subgraph Services["Core Services"]
-        AUTH["Auth Service: ログイン/会員登録"]
-        INV["Inventory Service: CRUD管理"]
-        MATCH["Matching Engine: 類似度判定ロジック"]
-    end
-    
-    GRPC["gRPC Client (Python連携)"]
-end
+  %% --- Backend Services ---
+  subgraph Backend["Backend (K8s / VM群)"]
+    AuthSvc[Auth Service\n(ID/PW, bcrypt)\nRedis: セッション管理]
+    UploadSvc[Upload Service\n(画像受取 -> オブジェクトストレージへ)]
+    Vectorizer[Vectorizer Service\n(Python: CLIP / ViT 等)\n特徴量ベクトル生成]
+    Worker[Background Worker\n(ジョブ: 変換/再ベクトル化/同期)]
+    SearchSvc[Search Service\n(類似度検索API)]
+    CompareSvc[比較表示ロジック\n(％表示・画像差分)]
+    SyncSvc[Sync Service\n(Edge ↔ 中央 同期)]
+    MQ[Message Queue\n(RabbitMQ / Kafka / Redis Streams)]
+  end
 
-%% Machine Learning: 解析基盤 (Python)
-subgraph ML["ML Server (Python)"]
-    direction LR
-    PSERVE["gRPC Server"]
-    VEC["Vector Extractor (ViT/ResNet)"]
-    NAME["AI Naming (OCR/VLM)"]
-    
-    PSERVE --> VEC
-    PSERVE --> NAME
-end
+  %% --- Storage ---
+  subgraph Storage["データストア"]
+    ObjStore[Object Storage\n(S3 / MinIO) : 元画像]
+    Postgres[Postgres + pgvector\n(ベクトル + メタデータ)]
+    Redis[Redis\n(セッション / TTL キャッシュ)]
+  end
 
-%% Storage: データ基盤
-subgraph Storage["Data & Storage"]
-    REDIS[("Redis: セッション管理 \n (Session ID -> UserID)")]
-    PG[("PostgreSQL + pgvector \n (商品データ & ベクトル)")]
-    IMG[("Object Storage (S3/MinIO) \n (商品画像バイナリ)")]
-end
+  %% --- Edge Device (Optional) ---
+  subgraph Edge["店頭ローカルノード (オフライン向け)"]
+    EdgeSvc[Edge Search Service\n(軽量 gRPC サーバ)]
+    EdgeIndex[ローカルベクトルDB\n(FAISS / hnswlib / sqlite+pgvector-lite)]
+    EdgeSync[同期クライアント\n(差分ダウンロード)]
+  end
 
-%% フロー定義
-UI <--> SDK
-SDK <--> MW
-MW <--> REDIS
+  %% --- Admin/UI ---
+  subgraph UI["管理UI / Web Dashboard"]
+    AdminWeb[在庫一覧 / 編集\n(商品編集, 削除, 再登録)]
+  end
 
-%% 登録・検索フロー
-SDK ---> AUTH
-SDK ---> INV
-SDK ---> MATCH
+  %% --- Flows: 登録 (Create) ---
+  MobileCam -->|撮影| MobileApp
+  MobileApp -->|gRPC Upload (画像 + metadata)| GRPCGW
+  GRPCGW -->|認可トークン| AuthSvc
+  GRPCGW -->|enqueue: upload_job| MQ
+  MQ --> Worker
+  Worker -->|store image| ObjStore
+  Worker -->|call| Vectorizer
+  Vectorizer -->|vector| Postgres
+  Worker -->|insert metadata| Postgres
 
-INV <--- gRPC ---> PSERVE
-MATCH <--- gRPC ---> PSERVE
+  %% --- Flows: 検索 (Query) ---
+  MobileApp -->|gRPC: search(image)| GRPCGW
+  GRPCGW --> AuthSvc
+  GRPCGW --> SearchSvc
+  SearchSvc -->|if central| Postgres
+  SearchSvc -->|return top-N (id, similarity)| Postgres
+  SearchSvc --> CompareSvc
+  CompareSvc --> ObjStore
+  CompareSvc -->|結果| GRPCGW
+  GRPCGW -->|response| MobileApp
 
-INV ---> PG
-INV ---> IMG
-MATCH ---> PG
+  %% --- Edge search flow (低遅延 / オフライン) ---
+  MobileApp -->|オンデバイス検索| LocalIndex
+  MobileApp -->|gRPC -> Edge Node（ローカル）| EdgeSvc
+  EdgeSvc --> EdgeIndex
+  EdgeIndex -->|hit| EdgeSvc
+  EdgeSvc -->|比較結果| MobileApp
+  EdgeSync -->|差分同期| SyncSvc
+  SyncSvc --> Postgres
+  SyncSvc --> EdgeIndex
+
+  %% --- その他連携 ---
+  AdminWeb -->|管理API (REST)| RESTGW
+  RESTGW --> AuthSvc
+  RESTGW --> Postgres
+  AuthSvc --> Redis
+  SearchSvc --> Redis
 ```
 
 # 3. ディレクトリ構成
