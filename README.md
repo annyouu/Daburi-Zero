@@ -39,56 +39,29 @@
 
 # 2. 全体図
 ```mermaid
-flowchart TD
+flowchart LR
 
-%% Frontend
-subgraph FE["Frontend (Next.js / Mobile)"]
-    UI["カメラUI / 在庫一覧 / 照合結果表示"]
+%% フロント
+UI["スマホUI (Next.js)"]
+
+%% Goバックエンド
+subgraph Go["Go API (司令塔)"]
+    direction TB
+    Auth["認証 (Redis)"]
+    Logic["登録・検索ロジック"]
 end
 
-%% Backend
-subgraph API_Layer["API Layer (Go)"]
-    AUTH["Auth Handler (ログイン/認証)"]
-    INV["Inventory Handler (CRUD)"]
-    SEARCH["Search Engine (類似度検索)"]
-    GRPC_C["gRPC Client"]
-end
+%% 解析（Python）
+ML["AI解析 (Python) \n [特徴量 & 商品名抽出]"]
 
-%% Middlewares & DB
-subgraph Storage["Storage Layer"]
-    REDIS[("Redis (Session / Cache)")]
-    DB[("PostgreSQL + pgvector (Meta & Vectors)")]
-    MINIO[("Object Storage (Images)")]
-end
+%% データベース
+DB[("DB (pgvector) \n [ベクトル & 商品情報]")]
 
-%% ML Server
-subgraph PY_Layer["ML Layer (Python)"]
-    PY_SERVER["gRPC Server"]
-    FEAT["Feature Extractor (ViT)"]
-    NAMING["Product Naming (OCR / VLM)"]
-end
-
-%% フロー定義
-UI <-->|1. ログイン/セッション確認| AUTH
-AUTH <--> REDIS
-
-UI --->|2. 商品撮影アップロード| INV
-INV --->|3. 画像解析依頼| GRPC_C
-GRPC_C <--- gRPC ---> PY_SERVER
-
-subgraph PY_Process["Python解析プロセス"]
-    PY_SERVER --> FEAT
-    PY_SERVER --> NAMING
-end
-
-FEAT -->|ベクトルデータ| GRPC_C
-NAMING -->|推論された商品名| GRPC_C
-
-INV --->|4. メタデータ & ベクトル保存| DB
-INV --->|5. 元画像保存| MINIO
-
-SEARCH --->|6. ベクトル近傍探索| DB
-SEARCH ---> UI
+%% フロー
+UI <--> Auth
+UI ---> Logic
+Logic <--- gRPC ---> ML
+Logic ---> DB
 ```
 
 # 3. ディレクトリ構成
@@ -214,11 +187,6 @@ Frontedは結果を表示し、ユーザーは気になった相手に1日3件�
 
 # 6. フロントエンド仕様 (Next.js+TypeScript)
 ## 主要ページ
-- /singup, /login：認証画面。
-- /profile：プロフィール編集 (名前、写真、公開範囲)
-- /upload：顔写真アップロード
-- /matches：類似ユーザー一覧 (スコア、サムネイル、チャットボタン)
-- /chat/[userId]：チャット画面
 
 ## なぜNext.jsを採用するか、Reactとの比較
 
