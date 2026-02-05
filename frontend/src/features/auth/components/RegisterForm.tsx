@@ -4,34 +4,31 @@ import { Input } from "@/components/common/Input";
 import { useAuth } from "../hooks/useAuth";
 
 export const RegisterForm = () => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-    const { register, isLoading } = useAuth();
+  const { register, isLoading } = useAuth();
 
-    const isEnabled = email !== "" && password !== "" && !isLoading;
+  const isEnabled = email !== "" && password !== "" && !isLoading;
 
-    const handleSubmit = async (e: React.SyntheticEvent) => {
-        e.preventDefault();
-        if (!isEnabled) return;
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isEnabled) return;
 
-        await register({
-            email,
-            password,
-        });
-    };
+    await register({ email, password });
+  };
 
-    return (
-    <div className="w-full p-8 space-y-8 bg-white rounded-2xl shadow-sm border border-gray-100">
+  return (
+    /* w-full p-8 ... border: これが白い枠（カード）の正体です */
+    <div className="w-full p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-black tracking-tighter text-blue-600">
-          DABURI ZERO
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          だぶりゼロ
         </h1>
         <h2 className="text-xl font-medium text-gray-600">新規登録</h2>
-        <p className="text-sm text-gray-400">まずはアカウントを作成しましょう</p>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="space-y-4">
           <Input
             label="Email"
@@ -60,7 +57,7 @@ export const RegisterForm = () => {
             active:scale-[0.98]
             ${
               isEnabled
-                ? "bg-blue-600 text-white hover:bg-blue-700"
+                ? "bg-[#7C74F7] text-white hover:bg-[#6A62E5]"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }
           `}
@@ -72,7 +69,7 @@ export const RegisterForm = () => {
       <div className="text-center">
         <Link
           to="/login"
-          className="text-sm text-gray-500 hover:text-blue-600 transition-colors"
+          className="text-sm text-gray-500 hover:text-[#7C74F7] transition-colors"
         >
           すでにアカウントをお持ちの方はこちら
         </Link>
