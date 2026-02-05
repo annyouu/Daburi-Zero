@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../api/Register";
 import type { UserRegisterInput, UserStatus } from "../types";
+import Cookies from 'js-cookie';
 
 export const useAuth = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +31,7 @@ export const useAuth = () => {
             const res = await registerUser(data);
 
             if (res.token) {
-                document.cookie = `token=${res.token}; path=/; max-age=86400; SameSite=Lax`;
+                Cookies.set("token", res.token, { expires: 1 });
             }
 
             navigateByStatus(res.status);
