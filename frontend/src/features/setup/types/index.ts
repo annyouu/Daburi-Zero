@@ -8,3 +8,7 @@ export interface SetupResponse {
     email: string;
     status: string;
 }
+
+export interface SetupImageInput {
+    image: File;
+}
