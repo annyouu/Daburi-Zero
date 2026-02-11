@@ -8,7 +8,7 @@ import (
 )
 
 type ProfileUseCaseInterface interface {
-	SetupProfileImage(ctx context.Context, userID string, file io.Reader) (*dto.UserOutput, error)
+	SetupProfileImage(ctx context.Context, userID string, file io.Reader, Name string) (*dto.UserOutput, error)
 }
 
 type profileUseCase struct {
@@ -27,16 +27,15 @@ func NewProfileUseCase(
 	}
 }
 
-func (u *profileUseCase) SetupProfileImage(ctx context.Context, userID string, file io.Reader) (*dto.UserOutput, error) {
+func (u *profileUseCase) SetupProfileImage(ctx context.Context, userID string, file io.Reader, Name string) (*dto.UserOutput, error) {
 	// 画像を送ったユーザー名を取得
 	user, err := u.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// ローカルストレージへ保存する
-	uploadPath := user.GenerateProfilePath()
-	imageURL, err := u.fileRepo.Upload(ctx, file, uploadPath)
+	// ストレージへ保存
+	imageURL, err := u.fileRepo.Upload(ctx, file, userID, Name)
 	if err != nil {
 		return nil, err
 	}
