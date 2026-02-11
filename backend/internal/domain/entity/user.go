@@ -20,6 +20,7 @@ type User struct {
 	Status string
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	FirebaseUID *string `json:"firebase_uid" db:"firebase_uid"`
 }
 
 // コンストラクタ
