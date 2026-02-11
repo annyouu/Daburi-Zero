@@ -13,3 +13,6 @@ backend/main
 
 # OSのキャッシュ
 .DS_Store
+
+# MinIO の実データを除外
+minio_data/
