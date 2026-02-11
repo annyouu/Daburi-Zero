@@ -1,14 +1,31 @@
 version: '3.8'
 
 services:
-# フロントエンド
+  # フロントエンド
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "5173:5173" # Viteのデフォルトポート
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Windows/Macでホットリロードが効かない場合の対策
+    stdin_open: true # インタラクティブモードを有効化
+    tty: true
+  
+  minio:
+    image: minio/minio
+    ports:
+      - "9005:9000" # API用
+      - "9001:9001" # 管理画面(Console)用
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - ./minio_data:/data
+    command: server /data --console-address ":9001"
+
 
 # Goアプリケーションサービス
   backend:
@@ -22,12 +39,19 @@ services:
       - DB_PORT=5432
       - DB_USER=mydestinyuser  
       - DB_PASSWORD=mypassword 
-      - DB_NAME=destiny_db    
+      - DB_NAME=destiny_db
+      # MinIO設定を追加
+      - AWS_S3_ENDPOINT=http://minio:9000
+      - AWS_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
     command: go run cmd/main.go
     depends_on:
       db:
           condition: service_healthy
       redis:
+          condition: service_started
+      minio:
           condition: service_started
 
 # PostgreSQLデータベースサービス (ユーザー情報、顔データ保存用)
