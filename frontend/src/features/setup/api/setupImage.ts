@@ -10,5 +10,9 @@ export const setupImage = (data: SetupImageInput): Promise<SetupResponse> => {
     formData.append("face_image", data.image);
 
     // ここをpatchにするかpostにするか問題
-    return apiClient.patch("/users/setup/image", formData);
+    return apiClient.patch("/users/setup/image", formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
 };
