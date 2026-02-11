@@ -6,8 +6,6 @@ import (
 )
 
 type FileStorageInterface interface {
-	// データをアップロードして、アクセス用のURLを返す
-	// file: 画像のバイナリ (io.Reader)
-	// path: EntityのGenerateProfilePath()で生成したパス
-	Upload(ctx context.Context, file io.Reader, path string) (string, error) 
+	// データをアップロードして、アクセス用のフルURLを返
+	Upload(ctx context.Context, file io.Reader, userID string, Name string) (string, error)
 }
