@@ -28,7 +28,7 @@ func (h *ProfileHandler) SetupImage(c *gin.Context) {
 		return
 	}
 
-	// マルチパートフォームから画像ファイルを取得
+	// ファイルヘッダーの取得
 	fileHeader, err := c.FormFile("face_image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -37,7 +37,10 @@ func (h *ProfileHandler) SetupImage(c *gin.Context) {
 		return
 	}
 
-	// UseCaseに渡すためにio.Readerとして開く
+	// 元のファイル名を取得する
+	Name := fileHeader.Filename
+
+	// UseCaseに渡すために、ファイルをio.Readerとして開く
 	file, err := fileHeader.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -48,7 +51,7 @@ func (h *ProfileHandler) SetupImage(c *gin.Context) {
 	defer file.Close()
 
 	// UseCaseの実行をする
-	output, err := h.profileUseCase.SetupProfileImage(c.Request.Context() ,userID, file)
+	output, err := h.profileUseCase.SetupProfileImage(c.Request.Context() ,userID, file, Name)
 	if err != nil {
 		respondError(c, err)
 		return
