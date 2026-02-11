@@ -42,15 +42,16 @@ erDiagram
 | カラム名          | データ型         | 制約               | 説明              |
 | ------------- | ------------ | ---------------- | --------------- |
 | id            | UUID         | PK               | ユーザーの主キーID      |
+| firebase_uid  | VARCHAR(128) | UNIQUE | FirebaseのUID (Googleユーザー識別用)      |
 | email         | VARCHAR(255) | UNIQUE, NOT NULL | 認証用メールアドレス      |
-| password_hash | TEXT         | NOT NULL         | パスワードのハッシュ値     |
+| password_hash | TEXT         | なし (NULL許可)        | Googleユーザーの場合は空(null)にする    |
 | name          | VARCHAR(50)  | NOT NULL         | アプリ内で表示されるユーザー名 |
 | profile_image_url | TEXT     | なし         | 表示用写真のURLパス |
 | status | VARCHAR(50)     | NOT NULL         | ユーザーの進行状況 |
 | created_at    | TIMESTAMP    | NOT NULL         | 登録日時            |
 | updateded_at    | TIMESTAMP    | NOT NULL         | 更新日時            |
 
-## 2-2. **Faces テーブル**
+## 2-2. **Items テーブル**
 
 「Daburi Zero」の本体。画像ベクトルと在庫状態をセットで保持する。
 
