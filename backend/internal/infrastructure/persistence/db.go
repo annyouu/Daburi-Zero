@@ -38,6 +38,24 @@ func InitDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("PostgreSQLへのPingに失敗しました: %w", err)
 	}
 
+	createTableQuery := `
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
+        profile_image_url TEXT,
+        status VARCHAR(50) DEFAULT 'PENDING_NAME',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );`
+
+	if _, err := db.ExecContext(ctx, createTableQuery); err != nil {
+		db.Close()
+        return nil, fmt.Errorf("usersテーブルの作成に失敗しました: %w", err)
+	}
+	log.Println("✅ usersテーブルの準備が完了しました")
+
 	// 接続プールの設定
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
