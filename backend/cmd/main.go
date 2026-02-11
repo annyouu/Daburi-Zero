@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
 
 	"destinyface/internal/infrastructure/persistence"
 	"destinyface/internal/infrastructure/redis"
-	"destinyface/internal/infrastructure/storage"
+
+	// "destinyface/internal/infrastructure/storage"
+	"destinyface/internal/infrastructure/s3"
 	"destinyface/internal/presentation/controller"
 	"destinyface/internal/presentation/middleware"
 
@@ -49,7 +52,23 @@ func main() {
 	userUseCase := usecase.NewUserUseCase(userRepo, sessionRepo)
 	userHandler := controller.NewUserHandler(userUseCase)
 
-	profileRepo := storage.NewLocalStorage("./uploads")
+	// profileRepo := storage.NewLocalStorage("./uploads")
+	
+	// MinIOストレージに保存するフェーズ
+	// MinIOクライアントの初期化
+	ctx := context.Background()
+	s3Client, err := s3.NewS3Client(ctx)
+	if err != nil {
+		log.Fatalf("S3 clientの作成に失敗した: %v", err)
+	}
+
+	// パケット名を指定
+	bucketName := os.Getenv("AWS_S3_BUCKET_NAME")
+	if bucketName == "" {
+		bucketName = "test-bucket"
+	}
+	profileRepo := s3.NewS3Storage(s3Client, bucketName)
+
 	profileUseCase := usecase.NewProfileUseCase(userRepo, profileRepo)
 	profileHandler := controller.NewProfileHandler(profileUseCase)
 
@@ -59,7 +78,7 @@ func main() {
 	// CORS設定
 	r.Use(cors.New(cors.Config{
 		// フロントエンドのURLを許可
-        AllowOrigins: []string{"http://localhost:3000"},
+        AllowOrigins: []string{"http://localhost:5173"},
         // 許可するHTTPメソッド
         AllowMethods: []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
         // 許可するヘッダー
@@ -90,7 +109,7 @@ func main() {
 
 		// 追加
 		userGroup.PATCH("/setup/name", userHandler.SetupName)
-		userGroup.POST("/setup/image", profileHandler.SetupImage)
+		userGroup.PATCH("/setup/image", profileHandler.SetupImage)
 	}
 
 	// 6. 起動
