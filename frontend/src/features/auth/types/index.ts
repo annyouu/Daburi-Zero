@@ -26,14 +26,6 @@ export interface UserSetupImageInput {
 }
 
 /**
- * ログイン 入力 (UserLoginInput)
- */
-export interface UserLoginInput {
-  email: string;
-  password: string;
-}
-
-/**
  * 汎用ユーザー出力 (UserOutput)
  * Register, GetProfile, UpdateProfile などのレスポンスに使用
  */
@@ -45,12 +37,4 @@ export interface UserResponse {
   status: UserStatus;
   token?: string; // omitempty 対応
   created_at: string;
-}
-
-/**
- * ログイン成功時 出力 (AuthTokenOutput)
- */
-export interface AuthTokenResponse {
-  token: string;
-  status: UserStatus;
 }
