@@ -1,8 +1,22 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import RegisterPage from '@/pages/Register';
-// 今後 Login や Home ができたらここに追加していく
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
+import RegisterPage from '@/pages/auth/Register';
+import TestPage from "@/pages/Test";
+import NameSetupPage from '@/pages/setup/NameSetup';
+import ImageSetupPage from '@/pages/setup/ImageSetup';
+import { GoogleLoginPage } from '@/pages/auth/GoogleLoginPage';
+import HomePage from '@/pages/Home';
+import LoginPage from '@/pages/login/LoginPage';
 
 const router = createBrowserRouter([
+  {
+    // ルートパスにアクセスしたら /home へリダイレクト
+    path: '/',
+    element: <Navigate to="/home" replace />,
+  },
+  {
+    path: '/home',
+    element: <HomePage />, // 👈 ホーム画面を追加
+  },
   {
     path: '/register',
     element: <RegisterPage />,
@@ -10,15 +24,23 @@ const router = createBrowserRouter([
   {
     /* ログイン画面（今後作成） */
     path: '/login',
-    element: <div>ログイン画面（作成予定）</div>,
+    element: <LoginPage />,
   },
   {
     /* セットアップ画面（今後作成） */
     path: '/setup',
     children: [
-      { path: 'name', element: <div>名前設定画面（作成予定）</div> },
-      { path: 'image', element: <div>画像設定画面（作成予定）</div> },
+      { path: 'name', element: <NameSetupPage /> },
+      { path: 'image', element: <ImageSetupPage /> },
     ],
+  },
+  {
+    path: "/google-login",
+    element: <GoogleLoginPage />,
+  },
+  {
+    path: '/test',
+    element: <TestPage />,
   },
 ]);
 
