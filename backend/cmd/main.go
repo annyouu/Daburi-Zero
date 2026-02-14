@@ -22,6 +22,8 @@ import (
 	"github.com/joho/godotenv"
 
 	goredis "github.com/redis/go-redis/v9"
+
+	"destinyface/internal/infrastructure/grpc"
 )
 
 func main() {
@@ -37,6 +39,21 @@ func main() {
 	}
 	defer db.Close()
 	log.Println("✅ Database connected")
+
+	// gRPC通信テスト
+	log.Println("gRPC通信テストを開始します...")
+	go func() {
+		// サーバー起動と重なると接続失敗しやすいので、少しだけ待つ
+        time.Sleep(3 * time.Second)
+        
+        dummyImage := []byte{0x89, 0x50, 0x4E, 0x47} // ダミーの画像データ
+        res, err := grpc.AnalyzeImageWithPython(dummyImage)
+        if err != nil {
+            log.Printf("❌ gRPCテスト失敗: %v", err)
+        } else {
+            log.Printf("✨ gRPCテスト成功! Pythonからの返答: %s (Success: %v)", res.ProductName, res.Success)
+        }
+	}()
 
 	// Redisクライアントの初期化を追加
 	rdb := goredis.NewClient(&goredis.Options{
