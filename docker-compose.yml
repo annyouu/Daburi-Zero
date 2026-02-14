@@ -26,6 +26,13 @@ services:
       - ./minio_data:/data
     command: server /data --console-address ":9001"
 
+# Python MLサービス (AI解析用)
+  python-ml:
+    build: ./python-ml
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./python-ml:/app
 
 # Goアプリケーションサービス
   backend:
