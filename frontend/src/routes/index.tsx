@@ -6,6 +6,7 @@ import ImageSetupPage from '@/pages/setup/ImageSetup';
 import { GoogleLoginPage } from '@/pages/auth/GoogleLoginPage';
 import HomePage from '@/pages/Home';
 import LoginPage from '@/pages/login/LoginPage';
+import TakePhotoPage from '@/pages/take_photo/TakePhotoPage';
 
 const router = createBrowserRouter([
   {
@@ -15,7 +16,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/home',
-    element: <HomePage />, // 👈 ホーム画面を追加
+    element: <HomePage />,
   },
   {
     path: '/register',
@@ -37,6 +38,10 @@ const router = createBrowserRouter([
   {
     path: "/google-login",
     element: <GoogleLoginPage />,
+  },
+  {
+    path: '/take-photo',
+    element: <TakePhotoPage />,
   },
   {
     path: '/test',
