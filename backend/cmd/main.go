@@ -41,19 +41,28 @@ func main() {
 	log.Println("✅ Database connected")
 
 	// gRPC通信テスト
-	log.Println("gRPC通信テストを開始します...")
-	go func() {
-		// サーバー起動と重なると接続失敗しやすいので、少しだけ待つ
-        time.Sleep(3 * time.Second)
+	// log.Println("gRPC通信テストを開始します...")
+	// go func() {
+	// 	// サーバー起動と重なると接続失敗しやすいので、少しだけ待つ
+    //     time.Sleep(3 * time.Second)
         
-        dummyImage := []byte{0x89, 0x50, 0x4E, 0x47} // ダミーの画像データ
-        res, err := grpc.AnalyzeImageWithPython(dummyImage)
-        if err != nil {
-            log.Printf("❌ gRPCテスト失敗: %v", err)
-        } else {
-            log.Printf("✨ gRPCテスト成功! Pythonからの返答: %s (Success: %v)", res.ProductName, res.Success)
-        }
-	}()
+    //     dummyImage := []byte{0x89, 0x50, 0x4E, 0x47} // ダミーの画像データ
+    //     res, err := grpc.AnalyzeImageWithPython(dummyImage)
+    //     if err != nil {
+    //         log.Printf("❌ gRPCテスト失敗: %v", err)
+    //     } else {
+    //         log.Printf("✨ gRPCテスト成功! Pythonからの返答: %s (Success: %v)", res.ProductName, res.Success)
+    //     }
+	// }()
+
+	// gRPCクライアントの初期化
+	// 接続先はDocker Composeのサービス名 "python-ml:50051"
+	grpcClient, err := grpc.NewImageAnalyzerClient("python-ml:50051")
+	if err != nil {
+		log.Fatalf("gRPC clientの初期化に失敗しました: %v", err)
+	}
+	defer grpcClient.Close() // プログラム終了時に接続を終える
+	log.Println("✅ gRPC ML Server connected")
 
 	// Redisクライアントの初期化を追加
 	rdb := goredis.NewClient(&goredis.Options{
@@ -88,6 +97,10 @@ func main() {
 
 	profileUseCase := usecase.NewProfileUseCase(userRepo, profileRepo)
 	profileHandler := controller.NewProfileHandler(profileUseCase)
+
+	// 画像解析用のユースケースの追加
+	analyzeUseCase := usecase.NewAnalyzeUseCase(grpcClient)
+	analyzeController := controller.NewAnalyzeHandler(analyzeUseCase)
 
 	// 5. サーバー設定 (Gin)
 	r := gin.Default()
@@ -127,6 +140,9 @@ func main() {
 		// 追加
 		userGroup.PATCH("/setup/name", userHandler.SetupName)
 		userGroup.PATCH("/setup/image", profileHandler.SetupImage)
+
+		// 画像解析エンドポイント
+		userGroup.POST("/analyze", analyzeController.Analyze)
 	}
 
 	// 6. 起動
