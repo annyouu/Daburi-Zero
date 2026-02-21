@@ -8,7 +8,7 @@ export const analyzePhoto = (file: File): Promise<AnalyzeResponse> => {
     const formData = new FormData();
     formData.append("image", file);
 
-    return apiClient.post("analyze", formData, {
+    return apiClient.post("/users/analyze", formData, {
         headers: {
             "Content-Type": "multipart/form-data",
         },
