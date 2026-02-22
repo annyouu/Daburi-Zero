@@ -54,7 +54,7 @@
 - API：gRPC Server (Goからの解析依頼を待ち受ける)
 
 3. フロントエンド
-- フレームワーク: Next.js (TypeScript)
+- フレームワーク: React (TypeScript)
 - スタイリング: Tailwind CSS
 - カメラ機能: react-hook-form + カスタムフック (スムーズな撮影・アップロード体験)
 
