@@ -8,6 +8,9 @@ import { GoogleLoginPage } from '@/pages/auth/GoogleLoginPage';
 import HomePage from '@/pages/Home';
 import LoginPage from '@/pages/login/LoginPage';
 import TakePhotoPage from '@/pages/take_photo/TakePhotoPage';
+import InventoryPage from '@/pages/inventory/InventoryPage';
+import InventoryRegisterPage from '@/pages/inventory/InventoryRegisterPage';
+import ProfilePage from '@/pages/profile/ProfilePage';
 
 const router = createBrowserRouter([
   {
@@ -23,6 +26,9 @@ const router = createBrowserRouter([
       { path: '/setup/image', element: <ImageSetupPage /> },
       { path: '/take-photo', element: <TakePhotoPage /> },
       { path: '/test', element: <TestPage /> },
+      { path: '/inventory', element: <InventoryPage /> },
+      { path: '/inventory/register', element: <InventoryRegisterPage /> },
+      { path: '/profile', element: <ProfilePage /> },
     ],
   },
   // レイアウトなし（認証系）
