@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
   { to: '/home', icon: Home, label: 'ホーム' },
-  { to: '/inventory', icon: Camera, label: '在庫登録' },
+  { to: '/inventory/register', icon: Camera, label: '在庫登録' },
   { to: '/profile', icon: User, label: 'プロフィール' },
 ];
 
