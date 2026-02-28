@@ -16,12 +16,13 @@
     - リクエスト: multipart/form-data (画像ファイル)。
     - レスポンス: 類似度スコア付きユーザーリスト。 -->
 
-3. 在庫管理(CRUD)系 (/items)
-- GET /items:
-- POST
-- GET
-- PATCH
-- DELETE
+3. 在庫管理(CRUD)系 (/inventory)
+- GET /inventory: 自分の持っている在庫一覧を取得。
+- POST /inventory/register: 新規登録 (撮影)。
+    - 挙動: Goが画像を受け取り → MinIO(S3)に保存 → Python(gRPC)でベクトル化 ＆ OCRで商品名抽出 → pgvector(DB)に保存。
+- GET /inventory/{itemId}: 商品の詳細（登録日や画像URL）取得。
+- PATCH /inventory/{itemId}: 商品名やメモの手動修正。
+- DELETE /inventory/{itemId}: 使い切った、または捨てた商品を削除。
 
 
 4. 店頭照合(検索)系 (/analyze)
