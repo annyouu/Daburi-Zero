@@ -11,11 +11,6 @@
 - PATCH /users/setup/name: 新規登録直後のニックネーム設定。ステータスを PENDING_IMAGE 等へ進行させる。
 - PATCH /users/setup/image: 新規登録直後の顔画像登録。ステータスを PENDING_IMAGEからACTIVEへ。
 
-<!-- 3. 顔類似検索系 (/matches)
-- POST /matches/search: 検索用画像のアップロードと類似検索の実行。
-    - リクエスト: multipart/form-data (画像ファイル)。
-    - レスポンス: 類似度スコア付きユーザーリスト。 -->
-
 3. 在庫管理(CRUD)系 (/inventory)
 - GET /inventory: 自分の持っている在庫一覧を取得。
 - POST /inventory/register: 新規登録 (撮影)。
@@ -32,7 +27,3 @@
         - match_found: boolean (似ているものがあるか)
         - similarity: float (類似度)
         - matched_item: 似ている商品の情報（画像URL、商品名）
-
-<!-- 5. 画像配信系 (/images)
-- GET /images/{fileName}: サーバーまたはストレージに保存された画像を表示。
-    - 注意：S3等の外部ストレージ利用時は、各APIのレスポンス（profile_image_url 等）に署名付きURLを直接含める運用を考える必要あり。 -->
