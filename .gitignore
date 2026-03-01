@@ -16,3 +16,5 @@ backend/main
 
 # MinIO の実データを除外
 minio_data/
+
+.venv
