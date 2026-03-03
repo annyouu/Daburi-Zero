@@ -3,6 +3,8 @@ package grpc
 import (
 	"context"
 
+	"time"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -31,41 +33,16 @@ func (c *ImageAnalyzerClient) Close() error {
 	return c.conn.Close()
 }
 
+// 5秒のタイムアウトを設定して解析を行う
 func (c *ImageAnalyzerClient) AnalyzeImage(ctx context.Context, imageData []byte) (*pb.AnalyzeResponse, error) {
+	// AI解析が重い場合,5秒で落とす
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Second)
+	defer cancel()
+
 	req := &pb.AnalyzeRequest{
 		ImageData: imageData,
 	}
 
-	return c.client.AnalyzeImage(ctx, req)
+	// 作成したtimeoutCtxを渡して実行する
+	return c.client.AnalyzeImage(timeoutCtx, req)
 }
-
-// // PythonのMLサーバーに画像を投げて解析結果をもらうメソッド
-// func AnalyzeImageWithPython(imageData []byte) (*pb.AnalyzeResponse, error) {
-// 	// Pythonサーバーへの接続設定
-// 	conn, err := grpc.Dial("python-ml:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	defer conn.Close()
-
-// 	client := pb.NewImageAnalyzerClient(conn)
-
-// 	// タイムアウト付きのコンテキストを作成
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
-// 	defer cancel()
-
-// 	// リクエストを送信
-// 	req := &pb.AnalyzeRequest{
-// 		ImageData: imageData,
-// 	}
-
-// 	log.Println("Python MLサーバーにリクエストを送信中...")
-// 	res, err := client.AnalyzeImage(ctx, req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return res, nil
-
-// }
