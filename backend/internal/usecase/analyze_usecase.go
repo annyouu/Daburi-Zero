@@ -1,3 +1,4 @@
+// 店頭での照合。analyze_usecaseを使ってベクトルを取得し、DB内のデータと比較して結果を返す。
 package usecase
 
 import (
