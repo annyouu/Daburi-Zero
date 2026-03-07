@@ -265,7 +265,7 @@ D. 運用・拡張性
 
 # 5. アーキテクチャ詳細 (クリーンアーキテクチャ & DDD の採用)
 なぜクリーンアーキテクチャやDDDを使うのかをまとめました。
-[クリーンアーキテクチャ](backend/docs/architecture/clean_architecture.md)
+[クリーンアーキテクチャ](backend/docs/architecture/clean_architecture.md)<br>
 [DDD](backend/docs/architecture/DDD.md)
 
 # 6. フロントエンド仕様 (React+TypeScript)
