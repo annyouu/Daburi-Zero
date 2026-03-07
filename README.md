@@ -265,12 +265,28 @@ D. 運用・拡張性
 
 # 5. アーキテクチャ詳細 (クリーンアーキテクチャ & DDD の採用)
 なぜクリーンアーキテクチャやDDDを使うのかをまとめました。<br>
-[クリーンアーキテクチャ](backend/docs/architecture/clean_architecture.md)<br>
-[DDD](backend/docs/architecture/DDD.md)
+[クリーンアーキテクチャについて](backend/docs/architecture/clean_architecture.md)<br>
+[DDDについて](backend/docs/architecture/DDD.md)
 
 # 6. フロントエンド仕様 (React+TypeScript)
 本プロジェクトのフロントエンドは、スピード感のある操作性と、堅牢な開発基盤を両立させるためにReact(Vite)+TypeScriptを採用している。
 ## 主要ページ
+1. Home (/home)：アプリの起点
+    a. メインアクション：「撮る」ボタン
+    b. サブ機能：登録中の在庫プレビュー表示
+    c. 遷移：撮影ボタン → 照合モーダルで画像入れ、照合するボタン押す → /analyzeへ
+
+2. Analyze (/analyze)：撮影したものが、在庫と合致するかのページ
+    a. 照合するボタンを押した後、画面を/analyze(結果専用ページ)に切り替える
+
+3. Register (/inventory/register)：新規登録専用のページ
+    a. アクション：撮影（またはライブラリ）➔ AI解析 ➔ 商品情報確認(AIが商品名も勝手に補完してくれる) ➔ 保存
+
+4. Inventory (/inventory)：全ての在庫を見るページ
+    a. 機能：登録済みアイテムのグリッド表示。各アイテムをタップして詳細確認・編集や削除を行う
+
+5. Profile (/profile)
+    a. 機能: ユーザー情報、登録数、パスワード変更、ログアウト
 
 ## Next.jsではなくReactなのか？
 モダンな開発では、Next.jsが主流ですが、本アプリの特性を考慮し、あえてシンプルなReact + Vite によるSPA構成を選択しました。
