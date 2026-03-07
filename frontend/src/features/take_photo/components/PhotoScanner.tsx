@@ -1,50 +1,18 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, ImageIcon, X, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
-import { usePhotoAnalysis } from "../hooks/usePhotoAnalysis";
-
-// ──────────────────────────────────────────
-// 判定ロジック
-// TODO: バックエンドから similarity_score が返ってきたら
-//       score に差し替える（現在は success フラグで代用）
-// ──────────────────────────────────────────
-type Verdict = "match" | "similar" | "none";
-
-const getVerdict = (success: boolean): Verdict => {
-  return success ? "match" : "none";
-};
-
-const VERDICT_CONFIG = {
-  match: {
-    icon: CheckCircle2,
-    color: "text-emerald-500",
-    bg: "bg-emerald-50 border-emerald-100",
-    label: "持っています",
-  },
-  similar: {
-    icon: AlertCircle,
-    color: "text-amber-500",
-    bg: "bg-amber-50 border-amber-100",
-    label: "似たものがあります",
-  },
-  none: {
-    icon: XCircle,
-    color: "text-gray-400",
-    bg: "bg-gray-50 border-gray-100",
-    label: "持っていないようです",
-  },
-} as const;
+import { Camera, ImageIcon, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // ──────────────────────────────────────────
 // メインコンポーネント
 // ──────────────────────────────────────────
 export const PhotoScanner = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
-  const { analyze, isLoading, result, error } = usePhotoAnalysis();
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,7 +24,9 @@ export const PhotoScanner = () => {
   };
 
   const handleAnalyze = () => {
-    if (selectedFile) analyze(selectedFile);
+    if (selectedFile && preview) {
+      navigate("/analyze", { state: { previewUrl: preview } });
+    }
   };
 
   const handleClose = () => {
@@ -64,9 +34,6 @@ export const PhotoScanner = () => {
     setPreview(null);
     setSelectedFile(null);
   };
-
-  const verdict = result ? getVerdict(result.success) : null;
-  const config = verdict ? VERDICT_CONFIG[verdict] : null;
 
   return (
     <>
@@ -131,8 +98,7 @@ export const PhotoScanner = () => {
                   <button
                     type="button"
                     onClick={() => cameraRef.current?.click()}
-                    disabled={isLoading}
-                    className="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 border-[#7C74F7] text-[#7C74F7] font-semibold text-sm hover:bg-[#EBE9FF] active:scale-[0.97] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 border-[#7C74F7] text-[#7C74F7] font-semibold text-sm hover:bg-[#EBE9FF] active:scale-[0.97] transition-all"
                   >
                     <Camera size={24} />
                     撮影する
@@ -140,8 +106,7 @@ export const PhotoScanner = () => {
                   <button
                     type="button"
                     onClick={() => galleryRef.current?.click()}
-                    disabled={isLoading}
-                    className="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 active:scale-[0.97] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 active:scale-[0.97] transition-all"
                   >
                     <ImageIcon size={24} />
                     画像を選ぶ
@@ -162,75 +127,23 @@ export const PhotoScanner = () => {
                       className="relative rounded-2xl overflow-hidden border border-gray-100 max-h-52"
                     >
                       <img src={preview} alt="プレビュー" className="w-full object-cover" />
-                      {isLoading && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3"
-                        >
-                          <div className="h-9 w-9 border-4 border-[#7C74F7] border-t-transparent rounded-full animate-spin" />
-                          <span className="text-white text-sm font-bold">AI解析中...</span>
-                        </motion.div>
-                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
 
                 {/* 確認するボタン */}
                 <AnimatePresence>
-                  {selectedFile && !result && (
+                  {selectedFile && (
                     <motion.button
                       type="button"
                       onClick={handleAnalyze}
-                      disabled={isLoading}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
-                      className="w-full py-3.5 font-bold rounded-2xl text-base bg-[#7C74F7] text-white hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full py-3.5 font-bold rounded-2xl text-base bg-[#7C74F7] text-white hover:brightness-110 active:scale-[0.98] transition-all"
                     >
-                      {isLoading ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          解析中...
-                        </span>
-                      ) : (
-                        "確認する"
-                      )}
+                      確認する
                     </motion.button>
-                  )}
-                </AnimatePresence>
-
-                {/* エラー */}
-                <AnimatePresence>
-                  {error && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="text-red-500 text-sm text-center"
-                    >
-                      {error}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-
-                {/* 判定結果 */}
-                <AnimatePresence>
-                  {result && config && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className={`flex items-center gap-3 p-4 rounded-2xl border ${config.bg}`}
-                    >
-                      <config.icon size={28} className={`shrink-0 ${config.color}`} />
-                      <div>
-                        <p className={`font-bold text-base ${config.color}`}>{config.label}</p>
-                        {result.product_name && (
-                          <p className="text-sm text-gray-600 mt-0.5">{result.product_name}</p>
-                        )}
-                      </div>
-                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
